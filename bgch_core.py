@@ -7,11 +7,7 @@ import subprocess
 
 class BgChCore:
     def __init__(self, bgdir, interval=60):
-        absp=os.path.abspath(bgdir)
-        if self.is_dir_and_exist(absp):
-            self.__bg_dir = absp
-        else:
-            raise AttributeError('no such directory')
+        self.set_bgdir(bgdir)
 
         if interval > 0:
             self.__intv = interval
@@ -32,11 +28,16 @@ class BgChCore:
         return rslt
 
     def set_bgdir(self, d):
-        absp=os.path.abspath(d)
-        if is_dir_and_exist(absp):
-            self.__bg_dir = absp
+        bgdir = None
+        if d.startswith('~'):
+            bgdir = os.path.expanduser(d)
         else:
-            raise AttributeError('no such directory')
+            bgdir=os.path.abspath(d)
+
+        if self.is_dir_and_exist(bgdir):
+            self.__bg_dir = bgdir
+        else:
+            raise AttributeError('no such directory: {0}'.format(bgdir))
 
     def get_bgdir(self):
         return self.__bg_dir
@@ -51,6 +52,7 @@ class BgChCore:
             return allimgs[0]
         else:
             raise FileNotFoundError('No image found')
+
     def play(self):
         sys.stdout.write('playing...\n')
         try:

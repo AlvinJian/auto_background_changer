@@ -3,20 +3,36 @@ import argparse
 import os
 import sys
 import time
+import re
 
 from daemon_util import *
 
 pidfile='/tmp/auto-bgchd.pid'
 
+def handle_interval_arg(intv):
+	if intv.isdigit():
+		return int(intv)
+	pttrn=re.compile('^[0-9]{1,}[sm]$')
+	rslt = pttrn.match(intv)
+	if rslt != None:
+		intv_str = rslt.group(0)
+		intv_num = int(intv_str[0:-1])
+		if intv_str.endswith('m'):
+			intv_num *= 60
+		return intv_num
+	else:
+		raise Exception('interval format error...')
+
 parser = argparse.ArgumentParser(description='random wallpaper changer')
 parser.add_argument('-dir', dest='bg_dir', type=str, required=True, help='wallpaper directory')
-parser.add_argument('-intv', dest='intv', type=int, default=60, help='interval of changing wallpaper')
+parser.add_argument('-intv', dest='intv', type=str, default='20s', help='interval of changing wallpaper')
 args = parser.parse_args()
 
 if is_daemon_start(pidfile) == False:
 	from bgch_core import *
 	try:
-		bg_core_obj = BgChCore(bgdir = args.bg_dir, interval = args.intv)
+		intv_num = handle_interval_arg(args.intv)
+		bg_core_obj = BgChCore(bgdir = args.bg_dir, interval = intv_num)
 		daemonize(pidfile, bg_core_obj.main_func)
 	except Exception as e:
 		print('Error: {0}'.format(e))
