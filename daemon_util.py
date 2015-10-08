@@ -3,12 +3,11 @@ import os
 import sys
 import atexit
 
-pidfile='/tmp/auto-bgchd.pid'
 errlog='/tmp/auto-bgchd-err.log'
 infolog='/tmp/auto-bgchd-info.log'
 sock='/tmp/auto-bgchd.socket'
 
-def daemonize(func):
+def daemonize(pidfile, func):
     def __cleanup__():
         os.remove(pidfile)
         os.remove(sock)
@@ -39,7 +38,7 @@ def daemonize(func):
     sys.stdout.flush()
     func()
 
-def is_daemon_start():
+def is_daemon_start(pidfile):
     pidnum = None
     if os.path.exists(pidfile):
         with open(pidfile, 'r') as pidf:
@@ -47,7 +46,7 @@ def is_daemon_start():
                 line=line.strip()
                 if line.isdigit():
                     pidnum = int(line)
-                    sys.stdout.write('pid: {0}\n'.format(pidnum))
+                    sys.stdout.write('pid found: {0}\n'.format(pidnum))
                     break
                 else:
                     sys.stdout.write('pidfile pass: '+line)
