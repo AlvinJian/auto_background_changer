@@ -1,0 +1,3 @@
+* basic function [DONE]
+* reimplement singleton daemon using socket. the socket will be used by ipc
+* implement a control program to communicate with the daemon using socket

@@ -6,7 +6,6 @@ import atexit
 def daemonize(pidfile, func, infolog=os.devnull, errlog='/tmp/auto-bgchd-err.log'):
     def __cleanup__():
         os.remove(pidfile)
-        os.remove(sock)
 
     try:
         pid = os.fork()
