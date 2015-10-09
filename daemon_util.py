@@ -42,12 +42,9 @@ def is_daemon_start(pidfile):
                 line=line.strip()
                 if line.isdigit():
                     pidnum = int(line)
-                    sys.stdout.write('pid found: {0}\n'.format(pidnum))
                     break
-                else:
-                    sys.stdout.write('pidfile pass: '+line)
+
     if pidnum == None:
-        sys.stdout.write('pid not found\n')
         return False
 
     if os.path.exists('/proc/{0}'.format(pidnum)):
