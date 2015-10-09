@@ -25,7 +25,8 @@ def handle_interval_arg(intv):
 
 parser = argparse.ArgumentParser(description='random wallpaper changer')
 parser.add_argument('-dir', dest='bg_dir', type=str, required=True, help='wallpaper directory')
-parser.add_argument('-intv', dest='intv', type=str, default='20s', help='interval of changing wallpaper')
+parser.add_argument('-intv', dest='intv', type=str, default='20s', metavar='MIN_OR_SEC', help='interval of changing wallpaper(i.e. 10s or 5m)')
+parser.add_argument('-dbginfo', dest='dbginfo', action='store_true', help='(optional)enable extra info for debug')
 args = parser.parse_args()
 
 if is_daemon_start(pidfile) == False:
@@ -33,7 +34,11 @@ if is_daemon_start(pidfile) == False:
 	try:
 		intv_num = handle_interval_arg(args.intv)
 		bg_core_obj = BgChCore(bgdir = args.bg_dir, interval = intv_num)
-		daemonize(pidfile, bg_core_obj.main_func)
+		if args.dbginfo:
+			info='/tmp/auto-bgchd-info.log'
+		else:
+			info=os.devnull
+		daemonize(pidfile, bg_core_obj.main_func, infolog=info)
 	except Exception as e:
 		print('Error: {0}'.format(e))
 else:

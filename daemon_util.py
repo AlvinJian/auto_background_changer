@@ -3,11 +3,7 @@ import os
 import sys
 import atexit
 
-errlog='/tmp/auto-bgchd-err.log'
-infolog='/tmp/auto-bgchd-info.log'
-sock='/tmp/auto-bgchd.socket'
-
-def daemonize(pidfile, func):
+def daemonize(pidfile, func, infolog=os.devnull, errlog='/tmp/auto-bgchd-err.log'):
     def __cleanup__():
         os.remove(pidfile)
         os.remove(sock)
