@@ -2,10 +2,21 @@
 import os
 import sys
 import atexit
+import fcntl
 
-def daemonize(pidfile, func, infolog=os.devnull, errlog='/tmp/auto-bgchd-err.log'):
+def daemonize(pidfile, func, infolog=os.devnull, errlog='/tmp/auto-bgchd-err.log', singl=True):
     def __cleanup__():
         os.remove(pidfile)
+    
+    # don't use open(filename, 'w') here since it will erase the existing pidfile
+    pidfd = os.open(pidfile, os.O_RDWR | os.O_CREAT)
+    if singl:
+        try:
+            fcntl.lockf(pidfd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except Exception as err:
+            raise Exception('{0}\ncannot lock pidfile:{1}. an instance is already running'.format(err, pidfile));
+        finally:
+            os.close(pidfd)
 
     try:
         pid = os.fork()
@@ -20,18 +31,19 @@ def daemonize(pidfile, func, infolog=os.devnull, errlog='/tmp/auto-bgchd-err.log
     os.umask(0)
     sys.stdout.flush()
     sys.stderr.flush()
-    #os.close(sys.stdin.fileno())
-    #os.close(sys.stdout.fileno())
+    os.close(sys.stdin.fileno())
     sys.stdout = open(infolog, 'w')
     sys.stderr = open(errlog, 'w')
 
     atexit.register(__cleanup__)
     pid_str = str(os.getpid())
-    with open(pidfile,'w') as f:
-    	f.write(pid_str + '\n')
-    sys.stdout.write('enter main routine...\n')
-    sys.stdout.flush()
-    func()
+    with open(pidfile,'w') as fobj:
+        fobj.write(pid_str + '\n')
+        fobj.flush()
+        fcntl.lockf(fobj, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        sys.stdout.write('enter main routine...\n')
+        sys.stdout.flush()
+        func()
 
 def is_daemon_start(pidfile):
     pidnum = None

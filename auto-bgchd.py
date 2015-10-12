@@ -29,17 +29,15 @@ parser.add_argument('-intv', dest='intv', type=str, default='20s', metavar='MIN_
 parser.add_argument('-dbginfo', dest='dbginfo', action='store_true', help='enable extra info for debug')
 args = parser.parse_args()
 
-if is_daemon_start(pidfile) == False:
-	from bgch_core import *
-	try:
-		intv_num = handle_interval_arg(args.intv)
-		bg_core_obj = BgChCore(bgdir = args.bg_dir, interval = intv_num)
-		if args.dbginfo:
-			info='/tmp/auto-bgchd-info.log'
-		else:
-			info=os.devnull
-		daemonize(pidfile, bg_core_obj.main_func, infolog=info)
-	except Exception as e:
-		print('Error: {0}'.format(e))
+if args.dbginfo:
+	info='/tmp/auto-bgchd-info.log'
 else:
-	print ('auto-bgchd is already running...')
+	info=os.devnull
+
+from bgch_core import *
+try:
+	intv_num = handle_interval_arg(args.intv)
+	bg_core_obj = BgChCore(bgdir = args.bg_dir, interval = intv_num)
+	daemonize(pidfile, bg_core_obj.main_func, infolog=info)
+except Exception as e:
+		print('Error: {0}'.format(e))
