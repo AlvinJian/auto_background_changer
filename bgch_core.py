@@ -17,18 +17,18 @@ class BgChCore:
         t = time.time()
         random.seed(t)
         self.__cmd = ['feh', '--bg-scale']
-        self.__icp_sv_thrd = None
+        self.__ipc_sv_thrd = None
 
     def main_func(self):
         sys.stdout.write('in main routine\n')
-        self.__icp_sv_thrd = start_server_thrd(self.ipc_handler)
+        self.__ipc_sv_thrd = start_server_thrd(self.ipc_handler)
         while True:
             self.play()
-            
-            if not self.__icp_sv_thrd.is_alive():
+
+            if not self.__ipc_sv_thrd.is_alive():
                 sys.stderr.write('ipc server is dead. restarting...\n')
                 sys.stderr.flush()
-                self.__icp_sv_thrd = start_server_thrd(self.ipc_handler)
+                self.__ipc_sv_thrd = start_server_thrd(self.ipc_handler)
 
     def ipc_handler(self, msg):
         # dummy output

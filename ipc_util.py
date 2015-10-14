@@ -7,7 +7,7 @@ import collections
 sockfile='/tmp/auto-bgchd.sock'
 END='##END##'
 HEAD='##HEAD##'
-IPC_TIMEOUT_CNT=3
+MAX_INVALID_CNT=3
 
 def start_server_thrd(ipc_handler):
     def listen_to_sock_and_respond():
@@ -21,7 +21,7 @@ def start_server_thrd(ipc_handler):
         sys.stdout.flush()
         msg, clip = '', ''
         started=False
-        timeout_cnt=0
+        invalid_cnt=0
         while True:
             raw = conn.recv(1024)
             if not raw:
@@ -34,7 +34,7 @@ def start_server_thrd(ipc_handler):
                 if started:
                     msg += clip
                 else:
-                    timeout_cnt += 1
+                    invalid_cnt += 1
 
                 if clip.endswith(END):
                     sys.stdout.write('send {0} to ipc_handler\n'.format(msg))
@@ -43,7 +43,9 @@ def start_server_thrd(ipc_handler):
                     conn.sendall(res.encode('utf-8'))
                     break
 
-                if timeout_cnt > IPC_TIMEOUT_CNT:
+                if invalid_cnt > MAX_INVALID_CNT:
+                    sys.stderr.write('too much invalid message in ipc. closing...\n')
+                    sys.stderr.flush()
                     break
 
         server.close()
