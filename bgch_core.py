@@ -1,9 +1,9 @@
 #!/usr/bin/python3
-import os
-import sys
+import os, sys
 import time
 import random
 import subprocess
+from ipc_util import *
 
 class BgChCore:
     def __init__(self, bgdir, interval=60):
@@ -17,11 +17,25 @@ class BgChCore:
         t = time.time()
         random.seed(t)
         self.__cmd = ['feh', '--bg-scale']
+        self.__icp_sv_thrd = None
 
     def main_func(self):
         sys.stdout.write('in main routine\n')
+        self.__icp_sv_thrd = start_server_thrd(self.ipc_handler)
         while True:
             self.play()
+            
+            if not self.__icp_sv_thrd.is_alive():
+                sys.stderr.write('ipc server is dead. restarting...\n')
+                sys.stderr.flush()
+                self.__icp_sv_thrd = start_server_thrd(self.ipc_handler)
+
+    def ipc_handler(self, msg):
+        # dummy output
+        payload = msg.split('|')[1]
+        sys.stdout.write('got: {0} from ipc\n'.format(payload))
+        sys.stdout.flush()
+        return 'Gotcha. Payload size: {0}'.format(len(payload))
 
     def is_dir_and_exist(self, path):
         rslt = os.path.exists(path) and os.path.isdir(path)
