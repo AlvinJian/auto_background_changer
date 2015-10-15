@@ -3,6 +3,10 @@ import os, sys
 import time
 import random
 import subprocess
+import collections
+import threading
+import queue
+
 from ipc_util import *
 
 class BgChCore:
@@ -19,6 +23,10 @@ class BgChCore:
         self.__cmd = ['feh', '--bg-scale']
         self.__ipc_sv_thrd = None
 
+        self.__status='PLAY'
+        self.__build_func_map()
+        self.__ipc_cmdq = queue.Queue()
+
     def main_func(self):
         sys.stdout.write('in main routine\n')
         self.__ipc_sv_thrd = start_server_thrd(self.ipc_handler)
@@ -32,9 +40,13 @@ class BgChCore:
 
     def ipc_handler(self, msg):
         # dummy output
-        payload = msg.split('|')[1]
-        sys.stdout.write('got: {0} from ipc\n'.format(payload))
+        payload = get_payload_obj_from_ipcmsg(msg)
+        sys.stdout.write('payload: {0} from ipc\n'.format(payload))
         sys.stdout.flush()
+        if payload.CMD in self.__ipc_cmd_map:
+            func = self.__ipc_cmd_map[payload.CMD]
+            self.__ipc_cmdq.put((func, payload.DATA))
+
         return 'Gotcha. Payload size: {0}'.format(len(payload))
 
     def is_dir_and_exist(self, path):
@@ -79,6 +91,9 @@ class BgChCore:
         sys.stdout.flush()
         time.sleep(self.__intv)
 
+    def pause(self):
+        pass
+
     def __is_image(self, filename):
         return filename.lower().endswith(('.jpg', '.jpeg', '.gif', '.png', '.tiff', '.svg', '.bmp'))
 
@@ -92,3 +107,28 @@ class BgChCore:
             exec_func = subprocess.call
         exec_func(self.__cmd, stdout=sys.stdout, stderr=sys.stderr)
         self.__cmd.pop()
+
+    def __build_func_map(self):
+        def ipc_cmd_play(data):
+            self.__status = 'PLAY'
+        def ipc_cmd_pause(data):
+            self.__status = 'PAUSE'
+        def ipc_cmd_next(data):
+            pass
+        def ipc_cmd_prev(data):
+            pass
+        def ipc_cmd_config(data):
+            pass
+        def ipc_cmd_info(data):
+            pass
+
+        self.__ipc_cmd_map = dict()
+        self.__ipc_cmd_map['PLAY'] = ipc_cmd_play
+        self.__ipc_cmd_map['PAUSE'] = ipc_cmd_pause
+        self.__ipc_cmd_map['NEXT'] = ipc_cmd_next
+        self.__ipc_cmd_map['PREV'] = ipc_cmd_prev
+        self.__ipc_cmd_map['CONFIG'] = ipc_cmd_config
+        self.__ipc_cmd_map['INFO'] = ipc_cmd_info
+
+        self.__status_map['PLAY'] = self.play
+        self.__status_map['PAUSE'] = self.pause

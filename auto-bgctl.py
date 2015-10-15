@@ -2,5 +2,5 @@
 import os, sys
 from ipc_util import *
 
-res = send_ipc_msg('hello world')
+res = send_ipcmsg_by_payload_obj(Payload(CMD='INFO', DATA=''))
 print(res)

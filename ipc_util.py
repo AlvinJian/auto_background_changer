@@ -4,10 +4,35 @@ import os, sys
 import threading
 import collections
 
+"""
+[note]
+message format: ##HEAD##|<payload>|##END##
+payload format: <command>:<data>, <data>, ...
+server response spec (after receiving message from client):
+    -1: error
+     0: valid message but client/server don't work due to the payload
+    >0: success
+   MSG: returned payload
+one response per message
+
+daemon(server) support receiving command and data spec:
+PLAY:
+PAUSE:
+NEXT:
+PREV:
+CONFIG:<bg_dir>, <interval>
+INFO:
+    return payload: MSG:<status>, <bg_dir>, <interval>
+
+controller(client) support receiving command and data spec:
+MSG:<data>, <data>, ...
+"""
+
 sockfile='/tmp/auto-bgchd.sock'
 END='##END##'
 HEAD='##HEAD##'
 MAX_INVALID_CNT=3
+Payload=collections.namedtuple('payload_t',['CMD', 'DATA'])
 
 def start_server_thrd(ipc_handler):
     def listen_to_sock_and_respond():
@@ -46,6 +71,7 @@ def start_server_thrd(ipc_handler):
                 if invalid_cnt > MAX_INVALID_CNT:
                     sys.stderr.write('too much invalid message in ipc. closing...\n')
                     sys.stderr.flush()
+                    conn.sendall('-1'.encode('utf-8'))
                     break
 
         server.close()
@@ -63,12 +89,21 @@ def start_server_thrd(ipc_handler):
     thrd.start()
     return thrd
 
-def send_ipc_msg(payload):
+def send_ipcmsg_by_payload_obj(payload):
     client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     client.connect(sockfile)
-    msg='{0}|{1}|{2}'.format(HEAD, payload, END)
+    pay_str='{0}:{1}'.format(payload.CMD, payload.DATA)
+    msg='{0}|{1}|{2}'.format(HEAD, pay_str, END)
     print('sending ' + msg)
     client.sendall(msg.encode('utf-8'))
     rsp = client.recv(1024)
     client.close()
     return rsp.decode('utf-8')
+
+def get_payload_obj_from_ipcmsg(msg):
+    p = msg.split('|')[1]
+    if ':' in p:
+        lst = p.split(':')
+        if len(lst) == 2:
+            return Payload(CMD=lst[0], DATA=lst[1])
+    raise ValueError('incorrect payload format')
