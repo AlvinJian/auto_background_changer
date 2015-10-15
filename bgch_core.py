@@ -11,6 +11,10 @@ from ipc_util import *
 
 class BgChCore:
     def __init__(self, bgdir, interval=60):
+        self.__config_lck = threading.Lock()
+        self.__status_lck = threading.Lock()
+        self.__playing_cv = threading.Condition()
+
         self.set_bgdir(bgdir)
 
         if interval > 0:
@@ -25,13 +29,13 @@ class BgChCore:
 
         self.__status='PLAY'
         self.__build_func_map()
-        self.__ipc_cmdq = queue.Queue()
 
     def main_func(self):
         sys.stdout.write('in main routine\n')
         self.__ipc_sv_thrd = start_server_thrd(self.ipc_handler)
         while True:
-            self.play()
+            st = self.get_status()
+            self.__status_map[st]()
 
             if not self.__ipc_sv_thrd.is_alive():
                 sys.stderr.write('ipc server is dead. restarting...\n')
@@ -39,38 +43,68 @@ class BgChCore:
                 self.__ipc_sv_thrd = start_server_thrd(self.ipc_handler)
 
     def ipc_handler(self, msg):
-        # dummy output
         payload = get_payload_obj_from_ipcmsg(msg)
         sys.stdout.write('payload: {0} from ipc\n'.format(payload))
         sys.stdout.flush()
         if payload.CMD in self.__ipc_cmd_map:
             func = self.__ipc_cmd_map[payload.CMD]
-            self.__ipc_cmdq.put((func, payload.DATA))
-
-        return 'Gotcha. Payload size: {0}'.format(len(payload))
+            func(payload.DATA)
+            return '{0}'.format(len(payload))
+        else:
+            return '0'
 
     def is_dir_and_exist(self, path):
         rslt = os.path.exists(path) and os.path.isdir(path)
         return rslt
 
     def set_bgdir(self, d):
+        self.__config_lck.acquire()
         bgdir = None
         if d.startswith('~'):
             bgdir = os.path.expanduser(d)
         else:
             bgdir=os.path.abspath(d)
 
-        if self.is_dir_and_exist(bgdir):
-            self.__bg_dir = bgdir
-        else:
-            raise AttributeError('no such directory: {0}'.format(bgdir))
+        try:
+            if self.is_dir_and_exist(bgdir):
+                self.__bg_dir = bgdir
+            else:
+                raise AttributeError('no such directory: {0}'.format(bgdir))
+        finally:
+            self.__config_lck.release()
 
     def get_bgdir(self):
-        return self.__bg_dir
+        with self.__config_lck:
+            bgdir = self.__bg_dir
+
+        return bgdir
+
+    def get_intv(self):
+        with self.__config_lck:
+            intv = self.__intv
+
+        return intv
+
+    def get_status(self):
+        with self.__status_lck:
+            st = self.__status
+
+        return st
+
+    def play(self):
+        with self.__playing_cv:
+            self.__play()
+            i = self.get_intv()
+            self.__playing_cv.wait(i)
+
+    def pause(self):
+        with self.__playing_cv:
+            self.__playing_cv.wait()
 
     def get_rand_picpath(self):
         allimgs = []
-        for (root, subFolders, filenames) in os.walk(self.__bg_dir):
+        bgdir = self.get_bgdir()
+        for (root, subFolders, filenames) in os.walk(bgdir):
             allimgs += list(filter(self.__is_image, map(lambda arg: os.path.join(root, arg), filenames)))
 
         if len(allimgs) > 0:
@@ -79,7 +113,7 @@ class BgChCore:
         else:
             raise FileNotFoundError('No image found')
 
-    def play(self):
+    def __play(self):
         sys.stdout.write('playing...\n')
         try:
             imgpath = self.get_rand_picpath()
@@ -89,10 +123,6 @@ class BgChCore:
             self.do_chbg(imgpath)
         sys.stderr.flush()
         sys.stdout.flush()
-        time.sleep(self.__intv)
-
-    def pause(self):
-        pass
 
     def __is_image(self, filename):
         return filename.lower().endswith(('.jpg', '.jpeg', '.gif', '.png', '.tiff', '.svg', '.bmp'))
@@ -110,9 +140,17 @@ class BgChCore:
 
     def __build_func_map(self):
         def ipc_cmd_play(data):
-            self.__status = 'PLAY'
+            with self.__status_lck:
+                self.__status = 'PLAY'
+
+            self.__playing_cv.notify()
+
         def ipc_cmd_pause(data):
-            self.__status = 'PAUSE'
+            with self.__status_lck:
+                self.__status = 'PAUSE'
+
+            self.__playing_cv.notify()
+
         def ipc_cmd_next(data):
             pass
         def ipc_cmd_prev(data):
