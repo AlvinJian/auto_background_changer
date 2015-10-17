@@ -18,6 +18,10 @@ IPC_CONFIG = 'CONFIG'
 IPC_INFO = 'INFO'
 
 class BgChCore:
+
+    PAUSE=0
+    PLAY=1
+
     def __init__(self, bgdir, interval=60):
         self.set_bgdir(bgdir)
 
@@ -29,7 +33,7 @@ class BgChCore:
         t = time.time()
         random.seed(t)
         self.__cmd = ['feh', '--bg-scale']
-        self.__status='PLAY'
+        self.__status=self.PLAY
         self.__playing_cv = threading.Condition()
         self.__build_func_map()
 
@@ -47,7 +51,7 @@ class BgChCore:
         self.__ipc_sv_thrd = start_server_thrd(self.ipc_handler)
         while True:
             self.exec_all_cmdq()
-            st = self.get_status_lck()
+            st = self.get_status()
             self.__status_map[st]()
 
             if not self.__ipc_sv_thrd.is_alive():
@@ -56,11 +60,11 @@ class BgChCore:
                 self.__ipc_sv_thrd = start_server_thrd(self.ipc_handler)
 
     def ipc_handler(self, msg):
-        # TODO verify payload.DATA
         payload = get_payload_obj_from_ipcmsg(msg)
         sys.stdout.write('payload: {0} from ipc\n'.format(payload))
         sys.stdout.flush()
         if payload.CMD in self.__ipc_cmd_map:
+            # TODO verify payload.DATA
             func = self.__ipc_cmd_map[payload.CMD]
             res = func(payload.DATA)
             # self.__ipc_cmdq.put((func, payload.DATA))
@@ -87,14 +91,14 @@ class BgChCore:
             raise AttributeError('no such directory: {0}'.format(bgdir))
 
     # __status is a primitive type, so st is not reference
-    def get_status_lck(self):
+    def get_status(self):
         with self.__status_lck:
             st = self.__status
         return st
 
-    def set_status_lck(self, st):
+    def set_status(self, st):
         with self.__status_lck:
-            self.__status_lck = st
+            self.__status = st
 
     def play(self):
         with self.__playing_cv:
@@ -140,17 +144,18 @@ class BgChCore:
 
     def __build_func_map(self):
         def ipc_cmd_play(data):
-            if self.get_status_lck() == 'PAUSE':
-                with self.__status_lck:
-                    self.set_status_lck('PLAY')
+            if self.get_status() == self.PAUSE:
+                with self.__playing_cv:
+                    self.set_status(self.PLAY)
                     self.__playing_cv.notify()
-                return 'Begin playing'
+                return 'Play'
 
         def ipc_cmd_pause(data):
-            if self.get_status_lck() == 'PLAY':
-                with self.__status_lck:
-                    self.__status = 'PAUSE'
+            if self.get_status() == self.PLAY:
+                with self.__playing_cv:
+                    self.set_status(self.PAUSE)
                     self.__playing_cv.notify()
+                return 'Pause'
 
         def ipc_cmd_next(data):
             pass
@@ -169,6 +174,4 @@ class BgChCore:
         self.__ipc_cmd_map[IPC_CONFIG] = ipc_cmd_config
         self.__ipc_cmd_map[IPC_INFO] = ipc_cmd_info
 
-        self.__status_map = dict()
-        self.__status_map['PLAY'] = self.play
-        self.__status_map['PAUSE'] = self.pause
+        self.__status_map = (self.pause, self.play)

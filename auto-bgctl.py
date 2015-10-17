@@ -1,14 +1,23 @@
 #!/usr/bin/python3
+
 import os, sys
+import argparse
 from ipc_util import *
 
-playagrs = ('play', )
-pauseargs = ('pause', )
-nextargs = ('next', )
-prevargs = ('prev', )
-infoargs = ('info', )
-configargs = ('config', '-dir', '-intv', )
+allars = ('play', 'pause', 'next', 'prev', 'info', 'config')
+configargs = ('-dir', '-intv')
 
-#test
-res = send_ipcmsg_by_payload_obj(Payload(CMD='PLAY', DATA=''))
+parser = argparse.ArgumentParser(description='controller program for auto-bgchd')
+
+parser.add_argument("cmd", choices=allars)
+
+# TODO check if there are other useless arguments except config
+args = parser.parse_args(sys.argv[1:2])
+print(args)
+
+if args.cmd != 'config':
+    res = send_ipcmsg_by_payload_obj(Payload(CMD=args.cmd.upper(), DATA=''))
+else:
+    # TODO parse config arg
+    pass
 print(res)
