@@ -3,25 +3,11 @@ import argparse
 import os
 import sys
 import time
-import re
 
 from daemon_util import *
+from misc_util import *
 
 pidfile='/tmp/auto-bgchd.pid'
-
-def handle_interval_arg(intv):
-	if intv.isdigit():
-		return int(intv)
-	pttrn=re.compile('^[0-9]{1,}[sm]$')
-	rslt = pttrn.match(intv)
-	if rslt != None:
-		intv_str = rslt.group(0)
-		intv_num = int(intv_str[0:-1])
-		if intv_str.endswith('m'):
-			intv_num *= 60
-		return intv_num
-	else:
-		raise Exception('interval format error...')
 
 parser = argparse.ArgumentParser(description='random wallpaper changer daemon')
 parser.add_argument('-dir', dest='bg_dir', type=str, required=True, help='wallpaper directory')

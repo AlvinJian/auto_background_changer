@@ -18,6 +18,11 @@ print(args)
 if args.cmd != 'config':
     res = send_ipcmsg_by_payload_obj(Payload(CMD=args.cmd.upper(), DATA=''))
 else:
-    # TODO parse config arg
+    # TODO parse and verify config arg
     pass
-print(res)
+
+if res != None:
+    p = get_payload_obj_from_ipcmsg(res)
+    print(p)
+else:
+    print(None)

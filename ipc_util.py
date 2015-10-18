@@ -65,7 +65,9 @@ def start_server_thrd(ipc_handler):
                     sys.stdout.write('send {0} to ipc_handler\n'.format(msg))
                     sys.stdout.flush()
                     res = ipc_handler(msg)
-                    conn.sendall(res.encode('utf-8'))
+                    p = Payload(CMD='MSG', DATA=res)
+                    msg = get_ipcmsg_by_payload_obj(p)
+                    conn.sendall(msg.encode('utf-8'))
                     break
 
                 if invalid_cnt > MAX_INVALID_CNT:
@@ -89,11 +91,15 @@ def start_server_thrd(ipc_handler):
     thrd.start()
     return thrd
 
+def get_ipcmsg_by_payload_obj(payload):
+    pay_str='{0}:{1}'.format(payload.CMD, payload.DATA)
+    msg='{0}|{1}|{2}'.format(HEAD, pay_str, END)
+    return msg
+
 def send_ipcmsg_by_payload_obj(payload):
     client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     client.connect(sockfile)
-    pay_str='{0}:{1}'.format(payload.CMD, payload.DATA)
-    msg='{0}|{1}|{2}'.format(HEAD, pay_str, END)
+    msg = get_ipcmsg_by_payload_obj(payload)
     print('sending ' + msg)
     client.sendall(msg.encode('utf-8'))
     rsp = client.recv(1024)

@@ -17,7 +17,6 @@ def create_ipc_handler(bg_obj):
         payload = get_payload_obj_from_ipcmsg(msg)
         sys.stdout.write('payload: {0} from ipc\n'.format(payload))
         sys.stdout.flush()
-        # TODO verify payload.DATA
         if payload.CMD in bg_obj.get_support_cmds():
             if payload.CMD == bgch_core.IPC_PLAY or payload.CMD == bgch_core.IPC_PAUSE:
                 handle_ipc_play_pause(payload)

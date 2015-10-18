@@ -11,6 +11,7 @@ from ipc_util import *
 from misc_util import *
 from ipcmsg_handling import *
 
+# TODO move following codes to ipc_util, and re-implement them as Enum
 IPC_PLAY = 'PLAY'
 IPC_PAUSE = 'PAUSE'
 IPC_NEXT = 'NEXT'
