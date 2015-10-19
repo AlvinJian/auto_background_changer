@@ -1,4 +1,4 @@
 * implement basic function [DONE]
 * prevent pidfile from race condition. use fcntl.lockf() [DONE]
-* isolate ipc handler from BgChCore, and use it to put messages to queue from which BgCore(main thread) perform actions.
+* isolate ipc handler from BgChCore, and use it to put messages to queue from which BgCore(main thread) perform certain actions. [DONE]
 * implement a control program to communicate with the daemon using unix socket
