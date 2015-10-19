@@ -6,44 +6,36 @@ import subprocess
 import collections
 import threading
 import queue
+import enum
 
 from ipc_util import *
 from misc_util import *
 from ipcmsg_handling import *
 
-# TODO move following codes to ipc_util, and re-implement them as Enum
-IPC_PLAY = 'PLAY'
-IPC_PAUSE = 'PAUSE'
-IPC_NEXT = 'NEXT'
-IPC_PREV = 'PREV'
-IPC_CONFIG = 'CONFIG'
-IPC_INFO = 'INFO'
+class Stat(enum.IntEnum):
+    PAUSE = 0
+    PLAY = 1
 
 class BgChCore:
-
-    PAUSE='PAUSE'
-    PLAY='PLAY'
-
     def __init__(self, bgdir, interval=60):
         self.__set_bgdir(bgdir)
-
-        if interval > 0:
-            self.__intv = interval
-        else:
-            raise AttributeError('interval error')
+        self.__set_intv(interval)
 
         t = time.time()
         random.seed(t)
         self.__cmd = ['feh', '--bg-scale']
-        self.__status=self.PLAY
+        self.__status = Stat.PLAY
         self.__playing_cv = threading.Condition()
         self.__build_func_map()
 
         self.__ipc_sv_thrd = None
-
         # BgChCore's properties are changed by main thread only,
         # so ipc commands are put to queue and exec by main thread
         self.__ipc_cmdq = queue.Queue()
+
+        self.__max_prev_img_num = 10
+        self.__prev_imgs = []
+        self.__cur_img = ''
 
     def main_func(self):
         sys.stdout.write('in main routine\n')
@@ -51,13 +43,16 @@ class BgChCore:
         self.__ipc_sv_thrd = start_server_thrd(ipc_handler)
         while True:
             self.__exec_all_cmdq()
-            st = self.get_status()
-            self.__status_map[st]()
-
+            self.__status_map[self.__status]()
             if not self.__ipc_sv_thrd.is_alive():
                 sys.stderr.write('ipc server is dead. restarting...\n')
                 sys.stderr.flush()
                 self.__ipc_sv_thrd = start_server_thrd(ipc_handler)
+
+    def get_all_info(self):
+        info_str = '{0}, {1}, {2}s'.format(self.__bg_dir, \
+            self.__cur_img, self.__intv)
+        return info_str
 
     def get_support_cmds(self):
         cmds = self.__ipc_cmd_map.keys()
@@ -89,12 +84,18 @@ class BgChCore:
         else:
             raise AttributeError('no such directory: {0}'.format(bgdir))
 
-    def get_status(self):
-        st = self.__status
-        return st
+    def __set_intv(interval):
+        if interval > 0:
+            self.__intv = interval
+        else:
+            raise AttributeError('interval error')
+
+    def is_play(self):
+        return self.__status is Stat.PLAY
 
     def __play(self):
         with self.__playing_cv:
+            self.__add_to_prev_img(self.__cur_img)
             self.__play_inner()
             self.__playing_cv.wait(self.__intv)
 
@@ -121,6 +122,7 @@ class BgChCore:
             sys.stderr.write('Error: {0}\n'.format(e))
         else:
             self.__do_chbg(imgpath)
+
         sys.stderr.flush()
         sys.stdout.flush()
 
@@ -133,32 +135,51 @@ class BgChCore:
         else:
             exec_func = subprocess.call
         exec_func(self.__cmd, stdout=sys.stdout, stderr=sys.stderr)
-        self.__cmd.pop()
+        self.__cur_img = self.__cmd.pop()
+
+    def __add_to_prev_img(self, img):
+        if img == '':
+            return
+        if len(self.__prev_imgs) >= self.__max_prev_img_num:
+            del self.__prev_imgs[0:1]
+        self.__prev_imgs.append(img)
 
     def __build_func_map(self):
         def ipc_cmd_play(data):
-            self.__status = self.PLAY
+            self.__status = Stat.PLAY
 
         def ipc_cmd_pause(data):
-            self.__status = self.PAUSE
+            self.__status = Stat.PAUSE
 
         def ipc_cmd_next(data):
-            pass
+            if self.__status is Stat.PAUSE:
+                self.__add_to_prev_img(self.__cur_img)
+                ppath = self.get_rand_picpath()
+                self.__do_chbg(ppath)
+
         def ipc_cmd_prev(data):
-            pass
+            if len(self.__prev_imgs) < 1:
+                return
+
+            img = self.__prev_imgs.pop()
+            self.__do_chbg(img)
+            if self.__status is Stat.PLAY:
+                with self.__playing_cv:
+                    self.__playing_cv.wait(self.__intv)
+
         def ipc_cmd_config(data):
             pass
         def ipc_cmd_info(data):
             pass
 
         self.__ipc_cmd_map = dict()
-        self.__ipc_cmd_map[IPC_PLAY] = ipc_cmd_play
-        self.__ipc_cmd_map[IPC_PAUSE] = ipc_cmd_pause
-        self.__ipc_cmd_map[IPC_NEXT] = ipc_cmd_next
-        self.__ipc_cmd_map[IPC_PREV] = ipc_cmd_prev
-        self.__ipc_cmd_map[IPC_CONFIG] = ipc_cmd_config
-        self.__ipc_cmd_map[IPC_INFO] = ipc_cmd_info
+        self.__ipc_cmd_map[IpcCmd.IPC_PLAY] = ipc_cmd_play
+        self.__ipc_cmd_map[IpcCmd.IPC_PAUSE] = ipc_cmd_pause
+        self.__ipc_cmd_map[IpcCmd.IPC_NEXT] = ipc_cmd_next
+        self.__ipc_cmd_map[IpcCmd.IPC_PREV] = ipc_cmd_prev
+        self.__ipc_cmd_map[IpcCmd.IPC_CONFIG] = ipc_cmd_config
+        self.__ipc_cmd_map[IpcCmd.IPC_INFO] = ipc_cmd_info
 
         self.__status_map = dict()
-        self.__status_map[self.PLAY] = self.__play
-        self.__status_map[self.PAUSE] = self.__pause
+        self.__status_map[Stat.PLAY] = self.__play
+        self.__status_map[Stat.PAUSE] = self.__pause
