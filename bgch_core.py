@@ -18,6 +18,10 @@ class Stat(enum.IntEnum):
 
 class BgChCore:
     def __init__(self, bgdir, interval=60):
+        # a lock syncing get_all_info method and all properties: bg_dir, status,
+        # current pic and interval
+        self.__info_lck = threading.Lock()
+
         self.__set_bgdir(bgdir)
         self.__set_intv(interval)
 
@@ -50,9 +54,10 @@ class BgChCore:
                 self.__ipc_sv_thrd = start_server_thrd(ipc_handler)
 
     def get_all_info(self):
-        info_str = '{0}, {1}, {2}s'.format(self.__bg_dir, \
-            self.__cur_img, self.__intv)
-        return info_str
+        with self.__info_lck:
+            info_str = '{0}, {1}, {2}, {3}s'.format(self.__status, self.__bg_dir, \
+                self.__cur_img, self.__intv)
+            return info_str
 
     def get_support_cmds(self):
         cmds = self.__ipc_cmd_map.keys()
@@ -63,6 +68,10 @@ class BgChCore:
         self.__ipc_cmdq.put(task)
         with self.__playing_cv:
             self.__playing_cv.notify()
+
+    def is_play(self):
+        with self.__info_lck:
+            return self.__status is Stat.PLAY
 
     def __exec_all_cmdq(self):
         while not self.__ipc_cmdq.empty():
@@ -80,30 +89,28 @@ class BgChCore:
             bgdir=os.path.abspath(d)
 
         if is_dir_and_exist(bgdir):
-            self.__bg_dir = bgdir
+            with self.__info_lck:
+                self.__bg_dir = bgdir
         else:
             raise AttributeError('no such directory: {0}'.format(bgdir))
 
-    def __set_intv(interval):
+    def __set_intv(self, interval):
         if interval > 0:
-            self.__intv = interval
+            with self.__info_lck:
+                self.__intv = interval
         else:
             raise AttributeError('interval error')
 
-    def is_play(self):
-        return self.__status is Stat.PLAY
-
     def __play(self):
         with self.__playing_cv:
-            self.__add_to_prev_img(self.__cur_img)
-            self.__play_inner()
+            self.__next_pic()
             self.__playing_cv.wait(self.__intv)
 
     def __pause(self):
         with self.__playing_cv:
             self.__playing_cv.wait()
 
-    def get_rand_picpath(self):
+    def __rand_picpath(self):
         allimgs = []
         for (root, subFolders, filenames) in os.walk(self.__bg_dir):
             allimgs += list(filter(is_image, map(lambda arg: os.path.join(root, arg), filenames)))
@@ -114,10 +121,11 @@ class BgChCore:
         else:
             raise FileNotFoundError('No image found')
 
-    def __play_inner(self):
-        sys.stdout.write('playing...\n')
+    def __next_pic(self):
+        self.__add_to_prev_img(self.__cur_img)
+        sys.stdout.write('next pic...\n')
         try:
-            imgpath = self.get_rand_picpath()
+            imgpath = self.__rand_picpath()
         except Exception as e:
             sys.stderr.write('Error: {0}\n'.format(e))
         else:
@@ -134,8 +142,10 @@ class BgChCore:
             exec_func = subprocess.run
         else:
             exec_func = subprocess.call
-        exec_func(self.__cmd, stdout=sys.stdout, stderr=sys.stderr)
-        self.__cur_img = self.__cmd.pop()
+
+        with self.__info_lck:
+            exec_func(self.__cmd, stdout=sys.stdout, stderr=sys.stderr)
+            self.__cur_img = self.__cmd.pop()
 
     def __add_to_prev_img(self, img):
         if img == '':
@@ -144,18 +154,20 @@ class BgChCore:
             del self.__prev_imgs[0:1]
         self.__prev_imgs.append(img)
 
+    def __set_status(self, stat):
+        with self.__info_lck:
+            self.__status = stat
+
     def __build_func_map(self):
         def ipc_cmd_play(data):
-            self.__status = Stat.PLAY
+            self.__set_status(Stat.PLAY)
 
         def ipc_cmd_pause(data):
-            self.__status = Stat.PAUSE
+            self.__set_status(Stat.PAUSE)
 
         def ipc_cmd_next(data):
             if self.__status is Stat.PAUSE:
-                self.__add_to_prev_img(self.__cur_img)
-                ppath = self.get_rand_picpath()
-                self.__do_chbg(ppath)
+                self.__next_pic()
 
         def ipc_cmd_prev(data):
             if len(self.__prev_imgs) < 1:
