@@ -122,13 +122,13 @@ class BgChCore:
             raise FileNotFoundError('No image found')
 
     def __next_pic(self):
-        self.__add_to_prev_img(self.__cur_img)
         sys.stdout.write('next pic...\n')
         try:
             imgpath = self.__rand_picpath()
         except Exception as e:
             sys.stderr.write('Error: {0}\n'.format(e))
         else:
+            self.__add_to_prev_img(self.__cur_img)
             self.__do_chbg(imgpath)
 
         sys.stderr.flush()
