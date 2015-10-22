@@ -4,6 +4,7 @@ import os, sys
 import threading
 import collections
 import enum
+import fcntl
 
 """
 [note]
@@ -19,9 +20,9 @@ PLAY:
 PAUSE:
 NEXT:
 PREV:
-CONFIG:<bg_dir>, <interval>. change background directory and interval
+CONFIG:<bg_dir>,<interval>. change background directory and interval
 INFO:
-    return payload: MSG:<status>, <bg_dir>, <interval>
+    return payload: MSG:<status>,<bg_dir>,<current wallpaper>,<interval>
 """
 
 sockfile='/tmp/auto-bgchd.sock'
@@ -42,6 +43,7 @@ class IpcCmd(enum.Enum):
 def start_server_thrd(ipc_handler):
     def listen_to_sock_and_respond():
         server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        fcntl.fcntl(server.fileno(), fcntl.F_SETFD, fcntl.FD_CLOEXEC)
         server.bind(sockfile)
         sys.stdout.write('start listening...\n')
         sys.stdout.flush()
@@ -103,6 +105,7 @@ def get_ipcmsg_by_payload_obj(payload):
 
 def send_ipcmsg_by_payload_obj(payload):
     client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    fcntl.fcntl(client.fileno(), fcntl.F_SETFD, fcntl.FD_CLOEXEC)
     client.connect(sockfile)
     msg = get_ipcmsg_by_payload_obj(payload)
     print('sending ' + msg)

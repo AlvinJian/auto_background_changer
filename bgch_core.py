@@ -18,8 +18,8 @@ class Stat(enum.IntEnum):
 
 class BgChCore:
     def __init__(self, bgdir, interval=60):
-        # a lock syncing get_all_info method and all properties: bg_dir, status,
-        # current pic and interval
+        # a lock syncing get_all_info, is_play methods and all properties: bg_dir,
+        # status, current pic and interval
         self.__info_lck = threading.Lock()
 
         self.__set_bgdir(bgdir)
@@ -33,8 +33,9 @@ class BgChCore:
         self.__build_func_map()
 
         self.__ipc_sv_thrd = None
-        # BgChCore's properties are changed by main thread only,
-        # so ipc commands are put to queue and exec by main thread
+        # BgChCore's properties are changed by itself within main thread only,
+        # so ipc commands which modify those properties are put to queue
+        # and exec in main thread
         self.__ipc_cmdq = queue.Queue()
 
         self.__max_prev_img_num = 10
@@ -55,7 +56,7 @@ class BgChCore:
 
     def get_all_info(self):
         with self.__info_lck:
-            info_str = '{0}, {1}, {2}, {3}s'.format(self.__status, self.__bg_dir, \
+            info_str = '{0},{1},{2},{3}s'.format(self.__status, self.__bg_dir, \
                 self.__cur_img, self.__intv)
             return info_str
 
@@ -82,12 +83,7 @@ class BgChCore:
             func(task[1])
 
     def __set_bgdir(self, d):
-        bgdir = None
-        if d.startswith('~'):
-            bgdir = os.path.expanduser(d)
-        else:
-            bgdir=os.path.abspath(d)
-
+        bgdir = abspath_lnx(d)
         if is_dir_and_exist(bgdir):
             with self.__info_lck:
                 self.__bg_dir = bgdir
@@ -180,8 +176,19 @@ class BgChCore:
                     self.__playing_cv.wait(self.__intv)
 
         def ipc_cmd_config(data):
-            pass
+            bg_dir, intv = data.split(',')
+            intv = intv.strip() # get rid of space if it exists...
+            try:
+                if bg_dir != '':
+                    self.__set_bgdir(bg_dir)
+                if intv.isdigit():
+                    self.__set_intv(int(intv))
+            except Exception as err:
+                sys.stderr.write('Error: {0}\n'.format(err))
+                sys.stderr.flush()
+
         def ipc_cmd_info(data):
+            # dummy
             pass
 
         self.__ipc_cmd_map = dict()

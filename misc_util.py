@@ -5,8 +5,16 @@ import re
 def is_dir_and_exist(path):
     return os.path.exists(path) and os.path.isdir(path)
 
+def abspath_lnx(d):
+    if d.startswith('~'):
+        absd = os.path.expanduser(d)
+    else:
+        absd=os.path.abspath(d)
+    return absd
+
 def is_image(filename):
-    return filename.lower().endswith(('.jpg', '.jpeg', '.gif', '.png', '.tiff', '.svg', '.bmp'))
+    return filename.lower().endswith(('.jpg', '.jpeg', '.gif', '.png', '.tiff', \
+        '.svg', '.bmp'))
 
 def handle_interval_arg(intv):
 	if intv.isdigit():

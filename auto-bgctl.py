@@ -2,13 +2,13 @@
 import os, sys
 import argparse
 from ipc_util import *
+from misc_util import *
 
 arg_to_ipccmd = {'play':IpcCmd.IPC_PLAY, 'pause':IpcCmd.IPC_PAUSE, 'next':IpcCmd.IPC_NEXT, \
     'prev':IpcCmd.IPC_PREV, 'info':IpcCmd.IPC_INFO, 'config':IpcCmd.IPC_CONFIG}
 
 parser = argparse.ArgumentParser(description='controller program for auto-bgchd')
 arggrp = parser.add_mutually_exclusive_group(required=True)
-
 arggrp.add_argument('-play', action='store_true', help='start playing')
 arggrp.add_argument('-pause', action='store_true', help='pause playing')
 arggrp.add_argument('-next', action='store_true', help='next background')
@@ -27,26 +27,58 @@ for k in args_d.keys():
         break
 
 if cmd == 'config':
-    # TODO parse and verify config args
+    # create additional parser for config
     conf_parser = argparse.ArgumentParser(\
         usage='auto-bgctl -config -dir BG_DIR -intv MIN_OR_SEC')
     conf_parser.add_argument('-dir', dest='bg_dir', type=str, help='wallpaper directory')
     conf_parser.add_argument('-intv', dest='intv', type=str, metavar='MIN_OR_SEC', \
         help='interval of changing wallpaper(i.e. 10s or 5m)')
     conf_args = conf_parser.parse_args(sys.argv[2:])
-    print(conf_args)
+    print('config args: {0}'.format(conf_args))
     if conf_args.bg_dir is None and conf_args.intv is None:
-        print('you have to specify either -dir or -intv')
+        print('you have to specify one of -dir and -intv at least')
         sys.exit(1)
-    bg_dir = conf_args.bg_dir if conf_args.bg_dir is not None else ''
-    intv = conf_args.intv if conf_args.intv is not None else ''
+
+    # verify bg_dir if it exists
+    if conf_args.bg_dir is not None:
+        if is_dir_and_exist(abspath_lnx(conf_args.bg_dir)):
+            bg_dir = conf_args.bg_dir
+        else:
+            print('No such directory: {0}'.format(conf_args.bg_dir))
+            sys.exit(1)
+    else:
+        bg_dir = ''
+
+    # verify interval
+    if conf_args.intv is not None:
+        try:
+            intv = handle_interval_arg(conf_args.intv)
+        except Exception as err:
+            print('Argument Error: {0}'.format(err))
+            sys.exit(1)
+    else:
+        intv = ''
+
     data = '{0},{1}'.format(bg_dir, intv)
     payload = Payload(CMD=arg_to_ipccmd[cmd], DATA=data)
 else:
     if len(sys.argv) > 2:
         print('{0} doesn\'t support these arguments: {1}'.format(cmd, sys.argv[2:]))
         sys.exit(1)
+
     payload = payload = Payload(CMD=arg_to_ipccmd[cmd], DATA='')
 
-res = send_ipcmsg_by_payload_obj(payload)
-print(res)
+try:
+    res_msg = send_ipcmsg_by_payload_obj(payload)
+except Exception as err:
+    print('Error: {0}'.format(err))
+    print('Something wrong with auto-bgchd?')
+    sys.exit(1)
+else:
+    res_p = get_payload_obj_from_ipcmsg(res_msg)
+
+if cmd == 'info':
+    # TODO parse the reply of ipc info
+    print(res_p.DATA)
+else:
+    print(res_p.DATA)
