@@ -3,6 +3,7 @@ import os, sys
 import argparse
 from ipc_util import *
 from misc_util import *
+from bgch_core import *
 
 arg_to_ipccmd = {'play':IpcCmd.IPC_PLAY, 'pause':IpcCmd.IPC_PAUSE, 'next':IpcCmd.IPC_NEXT, \
     'prev':IpcCmd.IPC_PREV, 'info':IpcCmd.IPC_INFO, 'config':IpcCmd.IPC_CONFIG}
@@ -11,14 +12,13 @@ parser = argparse.ArgumentParser(description='controller program for auto-bgchd'
 arggrp = parser.add_mutually_exclusive_group(required=True)
 arggrp.add_argument('-play', action='store_true', help='start playing')
 arggrp.add_argument('-pause', action='store_true', help='pause playing')
-arggrp.add_argument('-next', action='store_true', help='next background')
-arggrp.add_argument('-prev', action='store_true', help='previous background')
+arggrp.add_argument('-next', action='store_true', help='next wallpaper')
+arggrp.add_argument('-prev', action='store_true', help='previous wallpaper')
 arggrp.add_argument('-info', action='store_true', help='get current info of auto-bgchd')
 arggrp.add_argument('-config', action='store_true', \
-    help='change config of auto-bgchd. ex. auto-bgctl -config -dir BG_DIR -intv MIN_OR_SEC')
+    help='change config of auto-bgchd. ex. auto-bgctl -config -dir BG_DIR -intv MIN_OR_SEC. check auto-bgctl -config -h for detail')
 
 pargs = parser.parse_args(sys.argv[1:2])
-print(pargs)
 args_d = vars(pargs)
 cmd = ''
 for k in args_d.keys():
@@ -34,7 +34,6 @@ if cmd == 'config':
     conf_parser.add_argument('-intv', dest='intv', type=str, metavar='MIN_OR_SEC', \
         help='interval of changing wallpaper(i.e. 10s or 5m)')
     conf_args = conf_parser.parse_args(sys.argv[2:])
-    print('config args: {0}'.format(conf_args))
     if conf_args.bg_dir is None and conf_args.intv is None:
         print('you have to specify one of -dir and -intv at least')
         sys.exit(1)
@@ -79,6 +78,18 @@ else:
 
 if cmd == 'info':
     # TODO parse the reply of ipc info
-    print(res_p.DATA)
+    # print(res_p.DATA)
+    status, bgdir, cur_img, intv = res_p.DATA.split(',')
+
+    status = int(status)
+    if Stat(status) is Stat.PLAY:
+        status = 'Playing'
+    elif Stat(status) is Stat.PAUSE:
+        status = 'Paused'
+
+    print('Status: {0}'.format(status))
+    print('Wallpaper Directory: {0}'.format(bgdir))
+    print('Current Wallpaper: {0}'.format(cur_img))
+    print('Interval: {0}'.format(intv))
 else:
     print(res_p.DATA)

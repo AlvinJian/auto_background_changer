@@ -108,7 +108,7 @@ def send_ipcmsg_by_payload_obj(payload):
     fcntl.fcntl(client.fileno(), fcntl.F_SETFD, fcntl.FD_CLOEXEC)
     client.connect(sockfile)
     msg = get_ipcmsg_by_payload_obj(payload)
-    print('sending ' + msg)
+    # print('sending ' + msg)
     client.sendall(msg.encode('utf-8'))
     rsp = client.recv(1024)
     client.close()
