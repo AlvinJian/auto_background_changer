@@ -68,7 +68,7 @@ else:
     payload = payload = Payload(CMD=arg_to_ipccmd[cmd], DATA='')
 
 try:
-    res_msg = send_ipcmsg_by_payload_obj(payload)
+    res_msg = send_ipcmsg_to_sv(payload)
 except Exception as err:
     print('Error: {0}'.format(err))
     print('Something wrong with auto-bgchd?')

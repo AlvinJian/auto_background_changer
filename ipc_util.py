@@ -25,7 +25,7 @@ INFO:
     return payload: MSG:<status>,<bg_dir>,<current wallpaper>,<interval>
 """
 
-sockfile='/tmp/auto-bgchd.sock'
+sv_addr='/tmp/auto-bgchd.sock'
 END='##END##'
 HEAD='##HEAD##'
 MAX_INVALID_CNT=3
@@ -40,11 +40,46 @@ class IpcCmd(enum.Enum):
     IPC_INFO = 'INFO'
     IPC_MSG = 'MSG'
 
+# A socket server wrapper which is responsible for resource recycle
+class SockSvObj:
+    def __init__(self, addr):
+        self.__sv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        fcntl.fcntl(self.__sv.fileno(), fcntl.F_SETFD, fcntl.FD_CLOEXEC)
+
+        try:
+            self.__sv.bind(addr)
+        except Exception as err:
+            self.__sv.close()
+            raise err
+
+        self.__sv_addr, self.__cl_addr = addr, ''
+        self.__cl = None
+
+    def listen_and_accept(self):
+        self.__sv.listen(1)
+        self.__cl, self.__cl_addr = \
+            self.__sv.accept()
+
+    def is_connect(self):
+        return self.__cl is None
+
+    def recv(self, buf_size):
+        raw = self.__cl.recv(buf_size)
+        return raw
+
+    def send_ipcmsg_to_cl(payload):
+        msg = get_ipcmsg_by_payload_obj(payload)
+        self.__cl.sendall(msg)
+
+    def __del__(self):
+        self.__sv.close()
+        os.remove(self.__sv_addr)
+
 def start_server_thrd(ipc_handler):
     def listen_to_sock_and_respond():
         server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         fcntl.fcntl(server.fileno(), fcntl.F_SETFD, fcntl.FD_CLOEXEC)
-        server.bind(sockfile)
+        server.bind(sv_addr)
         sys.stdout.write('start listening...\n')
         sys.stdout.flush()
         server.listen(1)
@@ -84,7 +119,7 @@ def start_server_thrd(ipc_handler):
                     break
 
         server.close()
-        os.remove(sockfile)
+        os.remove(sv_addr)
 
     def event_loop():
         while True:
@@ -92,8 +127,8 @@ def start_server_thrd(ipc_handler):
 
     sys.stdout.write('starting ipc server\n')
     sys.stdout.flush()
-    if os.path.exists(sockfile):
-        os.remove(sockfile)
+    if os.path.exists(sv_addr):
+        os.remove(sv_addr)
     thrd = threading.Thread(target=event_loop, daemon=True)
     thrd.start()
     return thrd
@@ -103,10 +138,10 @@ def get_ipcmsg_by_payload_obj(payload):
     msg='{0}|{1}|{2}'.format(HEAD, pay_str, END)
     return msg
 
-def send_ipcmsg_by_payload_obj(payload):
+def send_ipcmsg_to_sv(payload):
     client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     fcntl.fcntl(client.fileno(), fcntl.F_SETFD, fcntl.FD_CLOEXEC)
-    client.connect(sockfile)
+    client.connect(sv_addr)
     msg = get_ipcmsg_by_payload_obj(payload)
     # print('sending ' + msg)
     client.sendall(msg.encode('utf-8'))
