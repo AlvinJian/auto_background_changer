@@ -5,7 +5,9 @@ import atexit
 import fcntl
 import stat
 
-def daemonize(pidfile, func, infolog=os.devnull, errlog='/tmp/auto-bgchd-err.log', singl=True):
+pidfile='/tmp/auto-bgchd.pid'
+
+def daemonize(func, infolog=os.devnull, errlog='/tmp/auto-bgchd-err.log', singl=True):
     def __cleanup__():
         os.remove(pidfile)
 
