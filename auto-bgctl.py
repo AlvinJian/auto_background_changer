@@ -4,9 +4,14 @@ import argparse
 from ipc_util import *
 from misc_util import *
 from bgch_core import *
+from daemon_util import *
 
 arg_to_ipccmd = {'play':IpcCmd.IPC_PLAY, 'pause':IpcCmd.IPC_PAUSE, 'next':IpcCmd.IPC_NEXT, \
     'prev':IpcCmd.IPC_PREV, 'info':IpcCmd.IPC_INFO, 'config':IpcCmd.IPC_CONFIG}
+
+if not is_daemon_start('/tmp/auto-bgchd.pid'):
+    print('auto-bgchd is not started...')
+    sys.exit(0)
 
 parser = argparse.ArgumentParser(description='controller program for auto-bgchd')
 arggrp = parser.add_mutually_exclusive_group(required=True)
