@@ -69,7 +69,7 @@ class SockSvObj:
 
     def send_ipcmsg_to_cl(payload):
         msg = get_ipcmsg_by_payload_obj(payload)
-        self.__cl.sendall(msg)
+        self.__cl.sendall(msg.encode('utf-8'))
 
     def __del__(self):
         self.__sv.close()
