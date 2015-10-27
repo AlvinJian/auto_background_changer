@@ -76,7 +76,7 @@ try:
     res_msg = send_ipcmsg_to_sv(payload)
 except Exception as err:
     print('Error: {0}'.format(err))
-    print('Something wrong with auto-bgchd?')
+    print('auto-bgchd is busy')
     sys.exit(1)
 else:
     res_p = get_payload_obj_from_ipcmsg(res_msg)

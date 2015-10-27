@@ -18,10 +18,6 @@ class Stat(enum.IntEnum):
 
 class BgChCore:
     def __init__(self, bgdir, interval=60):
-        # a lock syncing get_all_info, is_play methods and all properties: bg_dir,
-        # status, current pic and interval
-        self.__info_lck = threading.Lock()
-
         self.__set_bgdir(bgdir)
         self.__set_intv(interval)
 
@@ -55,45 +51,42 @@ class BgChCore:
                 self.__ipc_sv_thrd = start_server_thrd(ipc_handler)
 
     def get_all_info(self):
-        with self.__info_lck:
-            info_str = '{0},{1},{2},{3}s'.format(self.__status, self.__bg_dir, \
-                self.__cur_img, self.__intv)
-            return info_str
+        info_str = '{0},{1},{2},{3}s'.format(self.__status, self.__bg_dir, \
+            self.__cur_img, self.__intv)
+        return info_str
 
     def get_support_cmds(self):
         cmds = self.__ipc_cmd_map.keys()
         return cmds
 
-    def enque_ipc_cmd(self, cmd, data=None):
-        task = (cmd, data)
+    def enque_ipc_cmd(self, sock, cmd, data=None):
+        task = (sock, cmd, data)
         self.__ipc_cmdq.put(task)
         with self.__playing_cv:
             self.__playing_cv.notify()
 
     def is_play(self):
-        with self.__info_lck:
-            return self.__status is Stat.PLAY
+        return self.__status is Stat.PLAY
 
     def __exec_all_cmdq(self):
         while not self.__ipc_cmdq.empty():
-            task = self.__ipc_cmdq.get()
-            sys.stdout.write('consume cmd queue: {0}\n'.format(task))
+            sock, cmd, data = self.__ipc_cmdq.get()
+            sys.stdout.write('consume cmd queue: {0}, {1}, {2}\n'.format(sock, \
+                cmd, data))
             sys.stdout.flush()
-            func = self.__ipc_cmd_map[task[0]]
-            func(task[1])
+            func = self.__ipc_cmd_map[cmd]
+            func(sock, data)
 
     def __set_bgdir(self, d):
         bgdir = abspath_lnx(d)
         if is_dir_and_exist(bgdir):
-            with self.__info_lck:
-                self.__bg_dir = bgdir
+            self.__bg_dir = bgdir
         else:
             raise AttributeError('no such directory: {0}'.format(bgdir))
 
     def __set_intv(self, interval):
         if interval > 0:
-            with self.__info_lck:
-                self.__intv = interval
+            self.__intv = interval
         else:
             raise AttributeError('interval error')
 
@@ -139,9 +132,8 @@ class BgChCore:
         else:
             exec_func = subprocess.call
 
-        with self.__info_lck:
-            exec_func(self.__cmd, stdout=sys.stdout, stderr=sys.stderr)
-            self.__cur_img = self.__cmd.pop()
+        exec_func(self.__cmd, stdout=sys.stdout, stderr=sys.stderr)
+        self.__cur_img = self.__cmd.pop()
 
     def __add_to_prev_img(self, img):
         if img == '':
@@ -150,32 +142,39 @@ class BgChCore:
             del self.__prev_imgs[0:1]
         self.__prev_imgs.append(img)
 
-    def __set_status(self, stat):
-        with self.__info_lck:
-            self.__status = stat
-
     def __build_func_map(self):
-        def ipc_cmd_play(data):
-            self.__set_status(Stat.PLAY)
+        def ipc_cmd_play(sock, data):
+            self.__status = Stat.PLAY
+            p = Payload(CMD=IpcCmd.IPC_MSG, DATA='Start playing')
+            sock.send_ipcmsg_to_cl(p)
 
-        def ipc_cmd_pause(data):
-            self.__set_status(Stat.PAUSE)
+        def ipc_cmd_pause(sock, data):
+            self.__status = Stat.PAUSE
+            p = Payload(CMD=IpcCmd.IPC_MSG, DATA='Pause')
+            sock.send_ipcmsg_to_cl(p)
 
-        def ipc_cmd_next(data):
+        def ipc_cmd_next(sock, data):
             if self.__status is Stat.PAUSE:
                 self.__next_pic()
+            p = Payload(CMD=IpcCmd.IPC_MSG, DATA='Done')
+            sock.send_ipcmsg_to_cl(p)
 
-        def ipc_cmd_prev(data):
+        def ipc_cmd_prev(sock, data):
             if len(self.__prev_imgs) < 1:
-                return
+                p = Payload(CMD=IpcCmd.IPC_MSG, DATA='No previous images')
+            else:
+                img = self.__prev_imgs.pop()
+                self.__do_chbg(img)
+                p = Payload(CMD=IpcCmd.IPC_MSG, DATA='Done')
 
-            img = self.__prev_imgs.pop()
-            self.__do_chbg(img)
+            sock.send_ipcmsg_to_cl(p)
             if self.__status is Stat.PLAY:
                 with self.__playing_cv:
+                    # prevent socket server from blocking
+                    sock.force_release()
                     self.__playing_cv.wait(self.__intv)
 
-        def ipc_cmd_config(data):
+        def ipc_cmd_config(sock, data):
             bg_dir, intv = data.split(',')
             intv = intv.strip() # get rid of space if it exists...
             try:
@@ -184,10 +183,14 @@ class BgChCore:
                 if intv.isdigit():
                     self.__set_intv(int(intv))
             except Exception as err:
-                sys.stderr.write('Error: {0}\n'.format(err))
-                sys.stderr.flush()
+                data = 'Error: {0}\n'.format(err)
+            else:
+                data = 'Done'
 
-        def ipc_cmd_info(data):
+            p = Payload(CMD=IpcCmd.IPC_MSG, DATA = data)
+            sock.send_ipcmsg_to_cl(p)
+
+        def ipc_cmd_info(sock, data):
             # dummy
             pass
 

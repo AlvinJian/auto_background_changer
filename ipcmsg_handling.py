@@ -6,26 +6,30 @@ from misc_util import *
 from bgch_core import *
 
 def create_ipc_handler(bg_obj):
-    def handle_ipc_play_pause(p):
-        c1 = bg_obj.is_play() and p.CMD is IpcCmd.IPC_PAUSE
-        c2 = not bg_obj.is_play() and p.CMD is IpcCmd.IPC_PLAY
-        if c1 or c2:
-            bg_obj.enque_ipc_cmd(p.CMD, p.DATA)
-
-    def ipc_handler(msg):
+    def ipc_handler(sv, msg):
         payload = get_payload_obj_from_ipcmsg(msg)
         sys.stdout.write('payload: {0} from ipc\n'.format(payload))
         sys.stdout.flush()
         cmd = payload.CMD
         if cmd in bg_obj.get_support_cmds():
             if cmd is IpcCmd.IPC_PLAY or cmd is IpcCmd.IPC_PAUSE:
-                handle_ipc_play_pause(payload)
+                c1 = bg_obj.is_play() and cmd is IpcCmd.IPC_PAUSE
+                c2 = not bg_obj.is_play() and cmd is IpcCmd.IPC_PLAY
+                if c1 or c2:
+                    bg_obj.enque_ipc_cmd(sv, cmd, payload.DATA)
+                else:
+                    data = 'already in {0} state'.format(cmd.value.lower())
+                    p = Payload(CMD=IpcCmd.IPC_MSG, DATA=data)
+                    sv.send_ipcmsg_to_cl(p)
             elif cmd is IpcCmd.IPC_INFO:
-                return bg_obj.get_all_info()
+                # get info without interrupting current playback
+                p = Payload(CMD=IpcCmd.IPC_MSG, DATA=bg_obj.get_all_info())
+                sv.send_ipcmsg_to_cl(p)
             else:
-                bg_obj.enque_ipc_cmd(payload.CMD, payload.DATA)
-            return 'Sucess'
+                bg_obj.enque_ipc_cmd(sv, cmd, payload.DATA)
         else:
-            return '0'
+            data = '{0} is not supported'.format(cmd)
+            p = Payload(CMD=IpcCmd.IPC_MSG, DATA=data)
+            sv.send_ipcmsg_to_cl(p)
 
     return ipc_handler

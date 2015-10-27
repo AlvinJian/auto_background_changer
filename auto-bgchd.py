@@ -20,8 +20,9 @@ else:
 
 from bgch_core import *
 try:
-	intv_num = handle_interval_arg(args.intv)
-	bg_core_obj = BgChCore(bgdir = args.bg_dir, interval = intv_num)
-	daemonize(bg_core_obj.main_func, infolog=info)
+    intv_num = handle_interval_arg(args.intv)
+    bg_core_obj = BgChCore(bgdir = args.bg_dir, interval = intv_num)
+    # bg_core_obj.main_func()
+    daemonize(bg_core_obj.main_func, infolog=info)
 except Exception as e:
     print('Error: {0}'.format(e))

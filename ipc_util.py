@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import socket
-import os, sys
+import os, sys, time
 import threading
 import collections
 import enum
@@ -54,11 +54,15 @@ class SockSvObj:
 
         self.__sv_addr, self.__cl_addr = addr, ''
         self.__cl = None
+        self.__released = False
 
     def listen_and_accept(self):
+        sys.stdout.write('start listening...\n')
         self.__sv.listen(1)
         self.__cl, self.__cl_addr = \
             self.__sv.accept()
+        sys.stdout.write('accept connection: {0}\n'.format(self.__cl_addr))
+        sys.stdout.flush()
 
     def is_connect(self):
         return self.__cl is None
@@ -67,30 +71,42 @@ class SockSvObj:
         raw = self.__cl.recv(buf_size)
         return raw
 
-    def send_ipcmsg_to_cl(payload):
+    def send_ipcmsg_to_cl(self, payload):
         msg = get_ipcmsg_by_payload_obj(payload)
+        sys.stdout.write('send to client: {0}\n'.format(msg))
+        sys.stdout.flush()
         self.__cl.sendall(msg.encode('utf-8'))
 
-    def __del__(self):
+    def force_release(self):
         self.__sv.close()
         os.remove(self.__sv_addr)
+        sys.stdout.write('socket resource is released\n')
+        sys.stdout.flush()
+        self.__released = True
+
+    def is_released(self):
+        return self.__released
+
+    def __del__(self):
+        if not self.__released:
+            self.force_release()
 
 def start_server_thrd(ipc_handler):
     def listen_to_sock_and_respond():
-        server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        fcntl.fcntl(server.fileno(), fcntl.F_SETFD, fcntl.FD_CLOEXEC)
-        server.bind(sv_addr)
-        sys.stdout.write('start listening...\n')
-        sys.stdout.flush()
-        server.listen(1)
-        conn, addr = server.accept()
-        sys.stdout.write('accept connection of {0}\n'.format(addr))
-        sys.stdout.flush()
+        try:
+            sock_sv = SockSvObj(sv_addr)
+        except Exception as err:
+            sys.stdout.write('previous connection is not closed. Err: {0}\n'.format(err))
+            sys.stdout.flush()
+            time.sleep(0.2)
+            return
+
+        sock_sv.listen_and_accept()
         msg, clip = '', ''
         started=False
         invalid_cnt=0
         while True:
-            raw = conn.recv(1024)
+            raw = sock_sv.recv(1024)
             if not raw:
                 break
             else:
@@ -106,10 +122,7 @@ def start_server_thrd(ipc_handler):
                 if clip.endswith(END):
                     sys.stdout.write('send {0} to ipc_handler\n'.format(msg))
                     sys.stdout.flush()
-                    res = ipc_handler(msg)
-                    p = Payload(CMD=IpcCmd.IPC_MSG, DATA=res)
-                    msg = get_ipcmsg_by_payload_obj(p)
-                    conn.sendall(msg.encode('utf-8'))
+                    ipc_handler(sock_sv, msg)
                     break
 
                 if invalid_cnt > MAX_INVALID_CNT:
@@ -117,9 +130,6 @@ def start_server_thrd(ipc_handler):
                     sys.stderr.flush()
                     conn.sendall('-1'.encode('utf-8'))
                     break
-
-        server.close()
-        os.remove(sv_addr)
 
     def event_loop():
         while True:
