@@ -175,15 +175,15 @@ class BgChCore:
                     self.__playing_cv.wait(self.__intv)
 
         def ipc_cmd_config(sock, data):
-            bg_dir, intv = data.split(',')
-            intv = intv.strip() # get rid of space if it exists...
+            bg_dir, intv_str = data.split(',')
             try:
                 if bg_dir != '':
                     self.__set_bgdir(bg_dir)
-                if intv.isdigit():
-                    self.__set_intv(int(intv))
+                if intv_str != '':
+                    intv = handle_interval_arg(intv_str)
+                    self.__set_intv(intv)
             except Exception as err:
-                data = 'Error: {0}\n'.format(err)
+                data = '{0}'.format(err)
             else:
                 data = 'Done'
 

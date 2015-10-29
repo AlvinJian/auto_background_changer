@@ -43,25 +43,8 @@ if cmd == 'config':
         print('you have to specify one of -dir and -intv at least')
         sys.exit(1)
 
-    # verify bg_dir if it exists
-    if conf_args.bg_dir is not None:
-        if is_dir_and_exist(abspath_lnx(conf_args.bg_dir)):
-            bg_dir = conf_args.bg_dir
-        else:
-            print('No such directory: {0}'.format(conf_args.bg_dir))
-            sys.exit(1)
-    else:
-        bg_dir = ''
-
-    # verify interval
-    if conf_args.intv is not None:
-        try:
-            intv = handle_interval_arg(conf_args.intv)
-        except Exception as err:
-            print('Argument Error: {0}'.format(err))
-            sys.exit(1)
-    else:
-        intv = ''
+    bg_dir = conf_args.bg_dir if conf_args.bg_dir is not None else ''
+    intv = conf_args.intv if conf_args.intv is not None else ''
 
     data = '{0},{1}'.format(bg_dir, intv)
     payload = Payload(CMD=arg_to_ipccmd[cmd], DATA=data)
