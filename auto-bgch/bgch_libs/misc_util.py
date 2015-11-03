@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import os, sys
 import re
+import subprocess
 
 def is_dir_and_exist(path):
     return os.path.exists(path) and os.path.isdir(path)
@@ -29,3 +30,9 @@ def handle_interval_arg(intv):
 		return intv_num
 	else:
 		raise Exception('interval format error...')
+
+def is_feh_installed():
+    cmd = 'which feh'.split()
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    res = p.stdout.readline().decode('utf-8')
+    return res != ''

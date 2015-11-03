@@ -9,6 +9,11 @@ from bgch_libs.misc_util import *
 from bgch_libs.bgch_core import *
 
 def run():
+    if not is_feh_installed():
+        print('Error: feh is not installed. ')
+        print('Please install feh from your linux distro\'s repo or visit "http://feh.finalrewind.org/" for installation')
+        sys.exit(0)
+
     parser = argparse.ArgumentParser(description='random wallpaper changer daemon')
     parser.add_argument('-dir', dest='bg_dir', type=str, required=True, help='wallpaper directory')
     parser.add_argument('-intv', dest='intv', type=str, default='20s', metavar='MIN_OR_SEC', help='interval of changing wallpaper(i.e. 10s or 5m)')
