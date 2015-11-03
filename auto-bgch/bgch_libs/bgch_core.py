@@ -8,9 +8,9 @@ import threading
 import queue
 import enum
 
-from ipc_util import *
-from misc_util import *
-from ipcmsg_handling import *
+from bgch_libs.ipc_util import *
+from bgch_libs.misc_util import *
+from bgch_libs.ipcmsg_handling import *
 
 class Stat(enum.IntEnum):
     PAUSE = 0

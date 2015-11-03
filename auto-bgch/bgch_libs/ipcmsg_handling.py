@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 import os, sys
 
-from ipc_util import *
-from misc_util import *
-from bgch_core import *
+from bgch_libs.ipc_util import *
+from bgch_libs.misc_util import *
+from bgch_libs.bgch_core import *
 
 def create_ipc_handler(bg_obj):
     def ipc_handler(sv, msg):
