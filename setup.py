@@ -1,4 +1,4 @@
-#!#!/usr/bin/python3
+#!/usr/bin/python3
 from setuptools import setup, find_packages
 from os import path
 
@@ -6,7 +6,7 @@ setup(
     name='auto background changer',
     version='0.2.1',
     description='A simple wallpaper changer',
-    long_description='A simple wallpaper changer based on feh',
+    long_description='A simple wallpaper changer based on feh for Linux(X11)',
     url='https://github.com/AlvinJian/auto_background_changer',
     author='AlvinJian',
     author_email='alvinchien0624@gmail.com',
