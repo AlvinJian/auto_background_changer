@@ -4,9 +4,9 @@ import os
 import sys
 import time
 
-from bgch_libs.daemon_util import *
-from bgch_libs.misc_util import *
-from bgch_libs.bgch_core import *
+from autobgch.bgch_libs.daemon_util import *
+from autobgch.bgch_libs.misc_util import *
+from autobgch.bgch_libs.bgch_core import *
 
 def run():
     if not is_feh_installed():

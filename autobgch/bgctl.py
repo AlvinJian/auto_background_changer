@@ -2,10 +2,10 @@
 import os, sys
 import argparse
 
-from bgch_libs.ipc_util import *
-from bgch_libs.misc_util import *
-from bgch_libs.bgch_core import *
-from bgch_libs.daemon_util import *
+from autobgch.bgch_libs.ipc_util import *
+from autobgch.bgch_libs.misc_util import *
+from autobgch.bgch_libs.bgch_core import *
+from autobgch.bgch_libs.daemon_util import *
 
 def run():
     if not is_daemon_start(pidfile):
@@ -67,8 +67,6 @@ def run():
         res_p = get_payload_obj_from_ipcmsg(res_msg)
 
     if cmd == 'info':
-        # TODO parse the reply of ipc info
-        # print(res_p.DATA)
         status, bgdir, cur_img, intv = res_p.DATA.split(',')
 
         status = int(status)

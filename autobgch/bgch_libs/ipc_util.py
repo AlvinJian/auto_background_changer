@@ -88,7 +88,7 @@ class SockSvObj:
         return self.__released
 
     def __del__(self):
-        if not self.__released:
+        if self.__sv.fileno() > -1:
             self.force_release()
 
 def start_server_thrd(ipc_handler):
