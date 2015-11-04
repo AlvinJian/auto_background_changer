@@ -9,21 +9,21 @@ from bgch_libs.daemon_util import *
 
 def run():
     if not is_daemon_start(pidfile):
-        print('auto-bgchd is not running')
+        print('bgchd is not running')
         sys.exit(0)
 
     arg_to_ipccmd = {'play':IpcCmd.IPC_PLAY, 'pause':IpcCmd.IPC_PAUSE, 'next':IpcCmd.IPC_NEXT, \
         'prev':IpcCmd.IPC_PREV, 'info':IpcCmd.IPC_INFO, 'config':IpcCmd.IPC_CONFIG}
 
-    parser = argparse.ArgumentParser(description='controller program for auto-bgchd')
+    parser = argparse.ArgumentParser(description='controller program for bgchd')
     arggrp = parser.add_mutually_exclusive_group(required=True)
     arggrp.add_argument('-play', action='store_true', help='start playing')
     arggrp.add_argument('-pause', action='store_true', help='pause playing')
     arggrp.add_argument('-next', action='store_true', help='next wallpaper')
     arggrp.add_argument('-prev', action='store_true', help='previous wallpaper')
-    arggrp.add_argument('-info', action='store_true', help='get current info of auto-bgchd')
+    arggrp.add_argument('-info', action='store_true', help='get current info of bgchd')
     arggrp.add_argument('-config', action='store_true', \
-        help='change config of auto-bgchd. ex. auto-bgctl -config -dir BG_DIR -intv MIN_OR_SEC. check auto-bgctl -config -h for detail')
+        help='change config of bgchd. ex. bgctl -config -dir BG_DIR -intv MIN_OR_SEC. check bgctl -config -h for detail')
 
     pargs = parser.parse_args(sys.argv[1:2])
     args_d = vars(pargs)
@@ -36,7 +36,7 @@ def run():
     if cmd == 'config':
         # create additional parser for config
         conf_parser = argparse.ArgumentParser(\
-            usage='auto-bgctl -config -dir BG_DIR -intv MIN_OR_SEC')
+            usage='bgctl -config -dir BG_DIR -intv MIN_OR_SEC')
         conf_parser.add_argument('-dir', dest='bg_dir', type=str, help='wallpaper directory')
         conf_parser.add_argument('-intv', dest='intv', type=str, metavar='MIN_OR_SEC', \
             help='interval of changing wallpaper(i.e. 10s or 5m)')
@@ -61,7 +61,7 @@ def run():
         res_msg = send_ipcmsg_to_sv(payload)
     except Exception as err:
         print('Error: {0}'.format(err))
-        print('auto-bgchd is busy')
+        print('bgchd is busy')
         sys.exit(1)
     else:
         res_p = get_payload_obj_from_ipcmsg(res_msg)

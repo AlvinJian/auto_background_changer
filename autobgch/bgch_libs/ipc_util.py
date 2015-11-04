@@ -25,7 +25,7 @@ INFO:
     return payload: MSG:<status>,<bg_dir>,<current wallpaper>,<interval>
 """
 
-sv_addr='/tmp/auto-bgchd.sock'
+sv_addr='/tmp/bgchd.sock'
 END='##END##'
 HEAD='##HEAD##'
 MAX_INVALID_CNT=3

@@ -21,7 +21,7 @@ def run():
     args = parser.parse_args()
 
     if args.dbginfo:
-    	info='/tmp/auto-bgchd-info.log'
+        info='/tmp/bgchd-info.log'
     else:
     	info=os.devnull
 

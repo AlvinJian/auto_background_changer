@@ -5,9 +5,9 @@ import atexit
 import fcntl
 import stat
 
-pidfile='/tmp/auto-bgchd.pid'
+pidfile='/tmp/bgchd.pid'
 
-def daemonize(func, infolog=os.devnull, errlog='/tmp/auto-bgchd-err.log', singl=True):
+def daemonize(func, infolog=os.devnull, errlog='/tmp/bgchd-err.log', singl=True):
     def __cleanup__():
         os.remove(pidfile)
 
@@ -69,9 +69,9 @@ def is_daemon_start(pidfile):
         statusp = '/proc/{0}/status'.format(pidnum)
         with open(statusp, 'r') as statusf:
             for line in statusf:
-                if 'Name:' in line and 'auto-bgchd' in line:
+                if 'Name:' in line and 'bgchd' in line:
                     return True
-                elif 'Name:' in line and 'auto-bgchd' not in line:
+                elif 'Name:' in line and 'bgchd' not in line:
                     return False
     else:
         return False
