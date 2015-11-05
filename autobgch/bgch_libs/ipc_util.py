@@ -128,7 +128,7 @@ def start_server_thrd(ipc_handler):
                     sys.stderr.write('too much invalid message in ipc. closing...\n')
                     sys.stderr.flush()
                     p = Payload(CMD=IpcCmd.IPC_MSG, DATA='-1')
-                    sock_sv.send_ipcmsg_to_sv(p)
+                    sock_sv.send_ipcmsg_to_cl(p)
                     break
 
     def event_loop():
