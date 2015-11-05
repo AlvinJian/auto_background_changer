@@ -11,8 +11,7 @@ import fcntl
 message format: ##HEAD##|<payload>|##END##
 payload format: <command>:<data>, <data>, ...
 server response spec (after receiving message from client):
-    -1: error
-   MSG: <message content>
+   MSG: <message content>. -1 for error
 one response per receiving
 
 daemon(server) support receiving command and data spec:
@@ -128,7 +127,8 @@ def start_server_thrd(ipc_handler):
                 if invalid_cnt > MAX_INVALID_CNT:
                     sys.stderr.write('too much invalid message in ipc. closing...\n')
                     sys.stderr.flush()
-                    conn.sendall('-1'.encode('utf-8'))
+                    p = Payload(CMD=IpcCmd.IPC_MSG, DATA='-1')
+                    sock_sv.send_ipcmsg_to_sv(p)
                     break
 
     def event_loop():
