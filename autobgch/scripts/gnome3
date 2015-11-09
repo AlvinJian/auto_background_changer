@@ -1,0 +1,5 @@
+#!/bin/sh
+gsettings set org.gnome.desktop.background picture-uri "file://$1"
+if [ "`gsettings get org.gnome.desktop.background picture-options`" == "'none'" ]; then
+    gsettings set org.gnome.desktop.background picture-options 'zoom'
+fi

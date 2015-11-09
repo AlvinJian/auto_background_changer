@@ -3,9 +3,15 @@
 * isolate ipc handler from BgChCore, and use it to put messages to queue from
     which BgCore(main thread) perform certain actions. [DONE]
 * implement a control program to communicate with the daemon using unix socket [DONE]
-* add supoort for mate-desktop. script from variety:
+* add supoort for mate-desktop, unity and gnome3. scripts come from variety:
   # MATE after 1.6
   gsettings set org.mate.background picture-filename "$WP" 2> /dev/null
 
   # MATE before 1.6
   mateconftool-2 -t string -s /desktop/mate/background/picture_filename "$WP" 2> /dev/null
+
+  # Gnome 3, Unity
+  gsettings set org.gnome.desktop.background picture-uri "file://$WP" 2> /dev/null
+  if [ "`gsettings get org.gnome.desktop.background picture-options`" == "'none'" ]; then
+    gsettings set org.gnome.desktop.background picture-options 'zoom'
+  fi
