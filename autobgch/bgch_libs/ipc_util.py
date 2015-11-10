@@ -15,12 +15,12 @@ server response spec (after receiving message from client):
 one response per receiving
 
 daemon(server) support receiving command and data spec:
-PLAY:
-PAUSE:
-NEXT:
-PREV:
-CONFIG:<bg_dir>,<interval>. change background directory and interval
-INFO:
+PLAY][
+PAUSE][
+NEXT][
+PREV][
+CONFIG][<bg_dir>,<interval>. change background directory and interval
+INFO][
     return payload: MSG:<status>,<bg_dir>,<current wallpaper>,<interval>
 """
 
@@ -144,7 +144,7 @@ def start_server_thrd(ipc_handler):
     return thrd
 
 def get_ipcmsg_by_payload_obj(payload):
-    pay_str='{0}:{1}'.format(payload.CMD.value, payload.DATA)
+    pay_str='{0}][{1}'.format(payload.CMD.value, payload.DATA)
     msg='{0}|{1}|{2}'.format(HEAD, pay_str, END)
     return msg
 
@@ -154,6 +154,7 @@ def send_ipcmsg_to_sv(payload):
     client.connect(sv_addr)
     msg = get_ipcmsg_by_payload_obj(payload)
     # print('sending ' + msg)
+    client.settimeout(1.0)
     client.sendall(msg.encode('utf-8'))
     rsp = client.recv(1024)
     client.close()
@@ -161,8 +162,8 @@ def send_ipcmsg_to_sv(payload):
 
 def get_payload_obj_from_ipcmsg(msg):
     p = msg.split('|')[1]
-    if ':' in p:
-        lst = p.split(':')
+    if '][' in p:
+        lst = p.split('][')
         if len(lst) == 2:
             return Payload(CMD=IpcCmd(lst[0]), DATA=lst[1])
     raise ValueError('incorrect payload format')

@@ -36,3 +36,6 @@ def is_feh_installed():
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     res = p.stdout.readline().decode('utf-8')
     return res != ''
+
+def get_bcknd_dir():
+    return '/etc/autobgch/scripts'

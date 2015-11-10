@@ -17,13 +17,13 @@ class Stat(enum.IntEnum):
     PLAY = 1
 
 class BgChCore:
-    def __init__(self, bgdir, interval=60):
+    def __init__(self, bcknd, bgdir, interval=60):
+        self.__set_backend(bcknd)
         self.__set_bgdir(bgdir)
         self.__set_intv(interval)
 
         t = time.time()
         random.seed(t)
-        self.__cmd = ['feh', '--bg-scale']
         self.__status = Stat.PLAY
         self.__playing_cv = threading.Condition()
         self.__build_func_map()
@@ -77,12 +77,19 @@ class BgChCore:
             func = self.__ipc_cmd_map[cmd]
             func(sock, data)
 
+    def __set_backend(self, script):
+        script_path = os.path.join(get_bcknd_dir(), script)
+        if os.path.exists(script_path):
+            self.__cmd = ['/bin/sh', script_path]
+        else:
+            raise AttributeError('{0} does not exist'.format(script_path))
+
     def __set_bgdir(self, d):
         bgdir = abspath_lnx(d)
         if is_dir_and_exist(bgdir):
             self.__bg_dir = bgdir
         else:
-            raise AttributeError('no such directory: {0}'.format(bgdir))
+            raise AttributeError('{0} does not exist'.format(bgdir))
 
     def __set_intv(self, interval):
         if interval > 0:
