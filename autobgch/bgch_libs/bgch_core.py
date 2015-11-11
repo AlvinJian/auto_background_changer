@@ -109,11 +109,17 @@ class BgChCore:
     def __rand_picpath(self):
         allimgs = []
         for (root, subFolders, filenames) in os.walk(self.__bg_dir):
-            allimgs += list(filter(is_image, map(lambda arg: os.path.join(root, arg), filenames)))
+            allimgs += list(filter(is_image, map(lambda arg: os.path.join(root, \
+                arg), filenames)))
 
         if len(allimgs) > 0:
-            random.shuffle(allimgs)
-            return allimgs[0]
+            if len(allimgs) == 1:
+                return allimgs[0]
+            else:
+                random.shuffle(allimgs)
+                for img in allimgs:
+                    if img != self.__cur_img:
+                        return img
         else:
             raise FileNotFoundError('No image found')
 
