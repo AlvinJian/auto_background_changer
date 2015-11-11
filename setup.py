@@ -7,10 +7,8 @@ except ImportError:
     from setuptools import setup, find_packages, Extension
 
 data_files=[
-    ('/etc/autobgch/scripts/',['autobgch/scripts/feh']),
-    ('/etc/autobgch/scripts/',['autobgch/scripts/mate']),
-    ('/etc/autobgch/scripts/',['autobgch/scripts/gnome3']),
-    ('/etc/autobgch/scripts/',['autobgch/scripts/unity']),
+    ('/etc/autobgch/scripts/',['autobgch/scripts/feh', 'autobgch/scripts/mate',
+        'autobgch/scripts/gnome3', 'autobgch/scripts/unity'])
 ]
 
 setup(

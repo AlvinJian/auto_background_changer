@@ -7,6 +7,23 @@ from autobgch.bgch_libs.misc_util import *
 from autobgch.bgch_libs.bgch_core import *
 from autobgch.bgch_libs.daemon_util import *
 
+help_msg = """\
+usage: bgctl [play|pause|prev|next|info|config -dir BG_DIR -intv MIN_OR_SEC]
+
+controll program for bgchd
+
+Commands:
+  play      Start playing
+  pause     Stop playing
+  prev      Previous Wallpaper
+  next      Next Wallpaper
+  info      Show information of bgchd
+  config    Change configuration of bgchd. check 'bgctl config --help' for detail\
+"""
+
+def print_help():
+    print(help_msg)
+
 def run():
     if not is_daemon_start(pidfile):
         print('bgchd is not running')
@@ -15,28 +32,21 @@ def run():
     arg_to_ipccmd = {'play':IpcCmd.IPC_PLAY, 'pause':IpcCmd.IPC_PAUSE, 'next':IpcCmd.IPC_NEXT, \
         'prev':IpcCmd.IPC_PREV, 'info':IpcCmd.IPC_INFO, 'config':IpcCmd.IPC_CONFIG}
 
-    parser = argparse.ArgumentParser(description='controller program for bgchd')
-    arggrp = parser.add_mutually_exclusive_group(required=True)
-    arggrp.add_argument('-play', action='store_true', help='start playing')
-    arggrp.add_argument('-pause', action='store_true', help='pause playing')
-    arggrp.add_argument('-next', action='store_true', help='next wallpaper')
-    arggrp.add_argument('-prev', action='store_true', help='previous wallpaper')
-    arggrp.add_argument('-info', action='store_true', help='get current info of bgchd')
-    arggrp.add_argument('-config', action='store_true', \
-        help='change config of bgchd. ex. bgctl -config -dir BG_DIR -intv MIN_OR_SEC. check bgctl -config -h for detail')
+    if sys.argv[1] == '-h' or sys.argv[1] == '--help':
+        print_help()
+        sys.exit(0)
 
-    pargs = parser.parse_args(sys.argv[1:2])
-    args_d = vars(pargs)
-    cmd = ''
-    for k in args_d.keys():
-        if args_d[k] == True:
-            cmd = k
-            break
+    if sys.argv[1] not in arg_to_ipccmd.keys():
+        print('Command: {0} is not supported.'.format(sys.argv[1]))
+        print_help()
+        sys.exit(1)
+
+    cmd = sys.argv[1]
 
     if cmd == 'config':
         # create additional parser for config
         conf_parser = argparse.ArgumentParser(\
-            usage='bgctl -config -dir BG_DIR -intv MIN_OR_SEC')
+            usage='bgctl config -dir BG_DIR -intv MIN_OR_SEC')
         conf_parser.add_argument('-dir', dest='bg_dir', type=str, help='wallpaper directory')
         conf_parser.add_argument('-intv', dest='intv', type=str, metavar='MIN_OR_SEC', \
             help='interval of changing wallpaper(i.e. 10s or 5m)')
@@ -52,7 +62,9 @@ def run():
         payload = Payload(CMD=arg_to_ipccmd[cmd], DATA=data)
     else:
         if len(sys.argv) > 2:
-            print('{0} doesn\'t support these arguments: {1}'.format(cmd, sys.argv[2:]))
+            no_use_arg = '{0}'.format(sys.argv[2:])
+            no_use_arg = no_use_arg.strip('[]')
+            print('{0} doesn\'t support further arguments: {1}'.format(cmd, no_use_arg))
             sys.exit(1)
 
         payload = payload = Payload(CMD=arg_to_ipccmd[cmd], DATA='')
