@@ -2,7 +2,7 @@ A simple wallpaper changer supporting various backends. It Currently supports Gn
 
 This program has two parts: bgchd(the daemon) and bgctl(the controller).
 
-* bgchd (the daemon):
+* bgchd (the daemon). ```bgchd``` is responsible for changing wallpaper periodically :
 ```
 usage: bgchd [-h] -dir BG_DIR [-intv MIN_OR_SEC] -bcknd SCRIPT [-dbginfo]
 
@@ -16,7 +16,7 @@ optional arguments:
   -dbginfo          enable extra info for debug
 ```
 
-* bgctl (the controller):
+* bgctl (the controller). ```bgctl``` is responsible for controlling bgchd during its runtime.
 ``` 
 usage: bgctl [play|pause|prev|next|info|config -dir BG_DIR -intv MIN_OR_SEC]
 
