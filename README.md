@@ -1,4 +1,4 @@
-A simple wallpaper changer supporting various backends. It Currently supports Gnome 3, Unity, Mate Desktop and feh(for lightweight window manager, such as i3, openbox...etc.). User can also add custom scripts in ```/etc/autobgch/scripts/``` and pass the script name by ```-bcknd SCRIPT``` to the daemon.
+A simple wallpaper changer supporting various backends. It Currently supports Gnome 3, Unity, Mate Desktop and feh(for lightweight window manager, such as i3, openbox...etc.). User can also add custom scripts in ```/etc/autobgch/scripts/``` and pass the script name by ```-bcknd YOUR_SCRIPT``` to the daemon.
 
 This program has two parts: bgchd(the daemon) and bgctl(the controller).
 
