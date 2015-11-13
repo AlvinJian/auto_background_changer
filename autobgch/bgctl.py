@@ -67,7 +67,7 @@ def run():
             print('{0} doesn\'t support further arguments: {1}'.format(cmd, no_use_arg))
             sys.exit(1)
 
-        payload = payload = Payload(CMD=arg_to_ipccmd[cmd], DATA='')
+        payload = Payload(CMD=arg_to_ipccmd[cmd], DATA='')
 
     try:
         res_msg = send_ipcmsg_to_sv(payload)
