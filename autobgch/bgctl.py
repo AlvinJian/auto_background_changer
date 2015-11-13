@@ -55,7 +55,7 @@ def run():
             print('you have to specify one of -dir and -intv at least')
             sys.exit(1)
 
-        bg_dir = conf_args.bg_dir if conf_args.bg_dir is not None else ''
+        bg_dir = abspath_lnx(conf_args.bg_dir) if conf_args.bg_dir is not None else ''
         intv = conf_args.intv if conf_args.intv is not None else ''
 
         data = '{0},{1}'.format(bg_dir, intv)
