@@ -27,7 +27,7 @@ optional arguments:
 ```
 usage: bgctl [play|pause|prev|next|info|config -dir BG_DIR -intv MIN_OR_SEC]
 
-controll program for bgchd
+control program for bgchd
 
 Commands:
   play      Start playing
@@ -37,3 +37,5 @@ Commands:
   info      Show information of bgchd
   config    Change configuration of bgchd. check 'bgctl config --help' for detail
 ```
+### Autostart
+For GNOME and Mate users, copy the template in ```/etc/autobgch/autostart/``` to ```$HOME/.config/autostart/``` and modify it as you need. For the users of lightweight window manager(i3, openbox...etc.), just add <b>bgchd</b> and arguments that you need to the startup script of your window manager.
