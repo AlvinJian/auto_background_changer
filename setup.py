@@ -8,12 +8,14 @@ except ImportError:
 
 data_files=[
     ('/etc/autobgch/scripts/',['autobgch/scripts/feh', 'autobgch/scripts/mate',
-        'autobgch/scripts/gnome3', 'autobgch/scripts/unity'])
+        'autobgch/scripts/gnome3', 'autobgch/scripts/unity']),
+    ('/etc/autobgch/autostart/', ['autobgch/autostart/bgchd-gnome.desktop',
+        'autobgch/autostart/bgchd-mate.desktop'])
 ]
 
 setup(
     name='auto background changer',
-    version='0.3',
+    version='0.3.1',
     description='A simple wallpaper changer',
     long_description="""A simple wallpaper changer supporting multiple backends
         for Linux or other X11 system""",

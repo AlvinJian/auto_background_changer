@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=bgchd
+Comment=auto background changer daemon
+Exec=bgchd -dir /usr/share/backgrounds/ -intv 1m -bcknd mate
+Type=Application
+Terminal=false
