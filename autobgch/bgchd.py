@@ -16,6 +16,7 @@ def run():
     parser.add_argument('-intv', dest='intv', type=str, default='30s', metavar='MIN_OR_SEC', help='interval of changing wallpaper(i.e. 10s or 5m). default: 30s')
     parser.add_argument('-bcknd', dest='bcknd', type=str, required=True, metavar='SCRIPT', \
         help='script in /etc/autobgch/scripts/ as backend. official support: mate, gnome3, unity, feh')
+    parser.add_argument('-rpl', action='store_true', help='replace exsiting daemon if any')
     args = parser.parse_args()
 
     try:
@@ -24,7 +25,7 @@ def run():
         if DEBUG:
             bg_core_obj.main_func()
         else:
-            daemonize(bg_core_obj.main_func)
+            daemonize(bg_core_obj.main_func, replace=args.rpl)
     except Exception as e:
         print('Error: {0}'.format(e))
 

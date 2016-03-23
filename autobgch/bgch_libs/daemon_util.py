@@ -4,19 +4,26 @@ import sys
 import atexit
 import fcntl
 import stat
+import signal, time
 
 pidfile='/tmp/bgchd.pid'
 
-def daemonize(func, infolog=os.devnull, errlog='/tmp/bgchd-err.log', singl=True):
+def daemonize(func, infolog=os.devnull, errlog='/tmp/bgchd-err.log', replace=True):
     def __cleanup__():
         os.remove(pidfile)
 
-    if singl:
+    while True:
         try:
             pidfd = os.open(pidfile, os.O_RDWR | os.O_CREAT)
             fcntl.lockf(pidfd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            break
         except Exception as err:
-            raise Exception('Unable lock pidfile:{0}. An instance is already running'.format(pidfile));
+            if replace:
+                pidnum = get_prev_pid()
+                os.kill(pidnum, signal.SIGKILL)
+                time.sleep(1)
+            else:
+                raise Exception('Unable lock pidfile:{0}. An instance is already running'.format(pidfile));
         finally:
             os.close(pidfd)
 
@@ -52,7 +59,7 @@ def daemonize(func, infolog=os.devnull, errlog='/tmp/bgchd-err.log', singl=True)
     sys.stdout.flush()
     func()
 
-def is_daemon_start(pidfile):
+def get_prev_pid():
     pidnum = None
     if os.path.exists(pidfile):
         with open(pidfile, 'r') as pidf:
@@ -61,7 +68,10 @@ def is_daemon_start(pidfile):
                 if line.isdigit():
                     pidnum = int(line)
                     break
+    return pidnum
 
+def is_daemon_start(pidfile):
+    pidnum = get_prev_pid();
     if pidnum == None:
         return False
 
