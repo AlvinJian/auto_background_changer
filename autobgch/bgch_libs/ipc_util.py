@@ -9,9 +9,9 @@ import fcntl
 """
 [note]
 message format: ##HEAD##|<payload>|##END##
-payload format: <command>:<data>, <data>, ...
+payload format: <command>][<data>, <data>, ...
 server response spec (after receiving message from client):
-   MSG: <message content>. -1 for error
+   MSG][ <message content>; -1 for error
 one response per receiving
 
 daemon(server) support receiving command and data spec:
@@ -19,9 +19,10 @@ PLAY][
 PAUSE][
 NEXT][
 PREV][
-CONFIG][<bg_dir>,<interval>. change background directory and interval
+CONFIG][<bg_dir>,<interval>
+    change background directory and interval
 INFO][
-    return payload: MSG:<status>,<bg_dir>,<current wallpaper>,<interval>
+    return payload: MSG][<status>,<bg_dir>,<current wallpaper>,<interval>
 """
 
 sv_addr='/tmp/bgchd.sock'
