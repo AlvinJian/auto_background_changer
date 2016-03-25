@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=bgchd
 Comment=auto background changer daemon
-Exec=bgchd -dir /usr/share/backgrounds/ -intv 1m -bcknd gnome3
+Exec=bgchd -dir /usr/share/backgrounds/ -intv 1m -bcknd gnome3 -rpl
 Type=Application
 Terminal=false
