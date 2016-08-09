@@ -108,7 +108,7 @@ class BgChCore:
 
     def __rand_picpath(self):
         allimgs = []
-        for (root, subFolders, filenames) in os.walk(self.__bg_dir):
+        for (root, subFolders, filenames) in os.walk(self.__bg_dir, followlinks=True):
             allimgs += list(filter(is_image, map(lambda arg: os.path.join(root, \
                 arg), filenames)))
 
