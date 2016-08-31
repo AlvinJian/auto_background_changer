@@ -15,7 +15,7 @@ data_files=[
 
 setup(
     name='auto background changer',
-    version='0.3.1',
+    version='0.4',
     description='A simple wallpaper changer',
     long_description="""A simple wallpaper changer supporting multiple backends
         for Linux or other X11 system""",

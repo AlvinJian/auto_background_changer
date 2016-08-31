@@ -17,9 +17,9 @@ class Stat(enum.IntEnum):
     PLAY = 1
 
 class BgChCore:
-    def __init__(self, bcknd, bgdir, interval=60):
+    def __init__(self, bcknd, bgdirs, interval=60):
         self.__set_backend(bcknd)
-        self.__set_bgdir(bgdir)
+        self.__set_bgdir(bgdirs)
         self.__set_intv(interval)
 
         t = time.time()
@@ -51,7 +51,11 @@ class BgChCore:
                 self.__ipc_sv_thrd = start_server_thrd(ipc_handler)
 
     def get_all_info(self):
-        info_str = '{0},{1},{2},{3}s'.format(self.__status, self.__bg_dir, \
+        dirs = ''
+        for d in self.__bg_dir:
+            dirs += '{0}:'.format(d)
+        dirs = dirs[0:len(dirs)-1]
+        info_str = '{0},{1},{2},{3}s'.format(self.__status, dirs, \
             self.__cur_img, self.__intv)
         return info_str
 
@@ -84,12 +88,14 @@ class BgChCore:
         else:
             raise AttributeError('{0} does not exist'.format(script_path))
 
-    def __set_bgdir(self, d):
-        bgdir = abspath_lnx(d)
-        if is_dir_and_exist(bgdir):
-            self.__bg_dir = bgdir
-        else:
-            raise AttributeError('{0} does not exist'.format(bgdir))
+    def __set_bgdir(self, dirs):
+        self.__bg_dir = []
+        for d in dirs:
+            bgdir = abspath_lnx(d)
+            if is_dir_and_exist(bgdir):
+                self.__bg_dir.append(bgdir)
+            else:
+                raise AttributeError('{0} does not exist'.format(bgdir))
 
     def __set_intv(self, interval):
         if interval > 0:
@@ -108,18 +114,22 @@ class BgChCore:
 
     def __rand_picpath(self):
         allimgs = []
-        for (root, subFolders, filenames) in os.walk(self.__bg_dir, followlinks=True):
-            allimgs += list(filter(is_image, map(lambda arg: os.path.join(root, \
-                arg), filenames)))
+        for d in self.__bg_dir:
+            sys.stdout.write('{0}\n'.format(d))
+            for (root, subFolders, filenames) in os.walk(d, followlinks=False):
+                allimgs += list(filter(is_image, map(lambda arg: os.path.join(\
+                    root, arg), filenames)))
+        sys.stdout.write('image count: {0}\n'.format(len(allimgs)))
 
         if len(allimgs) > 0:
             if len(allimgs) == 1:
                 return allimgs[0]
             else:
-                random.shuffle(allimgs)
-                for img in allimgs:
-                    if img != self.__cur_img:
-                        return img
+                while True:
+                    index = random.randint(0, len(allimgs)-1)
+                    sys.stdout.write('index: {0}\n'.format(index))
+                    if allimgs[index] != self.__cur_img:
+                        return allimgs[index]
         else:
             raise FileNotFoundError('No image found')
 
