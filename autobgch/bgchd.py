@@ -13,7 +13,7 @@ DEBUG=False
 
 def run():
     parser = argparse.ArgumentParser(description='random wallpaper changer daemon')
-    parser.add_argument('-dir', dest='bg_dir', type=str, required=True, nargs='+', help='wallpaper directory')
+    parser.add_argument('-dir', dest='bg_dir', type=str, required=True, nargs='+', help='wallpaper directories')
     parser.add_argument('-intv', dest='intv', type=str, default='30s', metavar='MIN_OR_SEC', help='interval of changing wallpaper(i.e. 10s or 5m). default: 30s')
     parser.add_argument('-bcknd', dest='bcknd', type=str, required=True, metavar='SCRIPT', \
         help='script in /etc/autobgch/scripts/ as backend. official support: mate, gnome3, unity, feh')
