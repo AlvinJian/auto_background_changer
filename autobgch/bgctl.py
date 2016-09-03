@@ -47,7 +47,7 @@ def run():
         # create additional parser for config
         conf_parser = argparse.ArgumentParser(\
             usage='bgctl config -dir BG_DIR -intv MIN_OR_SEC')
-        conf_parser.add_argument('-dir', dest='bg_dir', type=str, help='wallpaper directory')
+        conf_parser.add_argument('-dir', dest='bg_dir', type=str,  nargs='+', help='wallpaper directories')
         conf_parser.add_argument('-intv', dest='intv', type=str, metavar='MIN_OR_SEC', \
             help='interval of changing wallpaper(i.e. 10s or 5m)')
         conf_args = conf_parser.parse_args(sys.argv[2:])
@@ -55,10 +55,13 @@ def run():
             print('you have to specify one of -dir and -intv at least')
             sys.exit(1)
 
-        bg_dir = abspath_lnx(conf_args.bg_dir) if conf_args.bg_dir is not None else ''
+        bgdirs = ''
+        if conf_args.bg_dir is not None:
+            for d in conf_args.bg_dir:
+                bgdirs += '{0}:'.format(d)
+        bgdirs = bgdirs[0:len(bgdirs)-1]
         intv = conf_args.intv if conf_args.intv is not None else ''
-
-        data = '{0},{1}'.format(bg_dir, intv)
+        data = '{0},{1}'.format(bgdirs, intv)
         payload = Payload(CMD=arg_to_ipccmd[cmd], DATA=data)
     else:
         if len(sys.argv) > 2:
