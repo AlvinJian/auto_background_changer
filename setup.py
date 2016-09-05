@@ -13,9 +13,11 @@ data_files=[
         'autobgch/autostart/bgchd-mate.desktop'])
 ]
 
+from autobgch.bgch_libs.bgch_core import __version__
+
 setup(
     name='auto background changer',
-    version='0.4',
+    version=__version__,
     description='A simple wallpaper changer',
     long_description="""A simple wallpaper changer supporting multiple backends
         for Linux or other X11 system""",

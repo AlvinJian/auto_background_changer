@@ -16,5 +16,9 @@
     gsettings set org.gnome.desktop.background picture-options 'zoom'
   fi
   [DONE]
-* solve the issue of not being killed after logout
-* rewrite the codes of handling argument in bgctl
+* solve the issue of not being killed after logout [DONE]
+* rewrite the codes of handling argument in bgctl [DONE]
+* rewrite ipc message format using json
+* multiple directories support[DONE]
+* add support of reading/writing config. use bgctl to save config
+* implement GUI using GTK, low priority

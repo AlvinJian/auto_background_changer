@@ -12,6 +12,8 @@ from autobgch.bgch_libs.ipc_util import *
 from autobgch.bgch_libs.misc_util import *
 from autobgch.bgch_libs.ipcmsg_handling import *
 
+__version__ = '0.4'
+
 class Stat(enum.IntEnum):
     PAUSE = 0
     PLAY = 1
