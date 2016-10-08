@@ -1,10 +1,11 @@
 ### Description
 A simple wallpaper changer supporting various backends. It currently supports Gnome 3, Unity, Mate Desktop and feh(for lightweight window manager, such as i3, openbox...etc.). User can also add custom scripts in ```/etc/autobgch/scripts/``` and pass the script name by ```-bcknd YOUR_SCRIPT``` to the daemon.
 ### Installation
-run ```git clone https://github.com/AlvinJian/auto_background_changer.git``` or download the release archive and decompress it. In the source code directory, execute
+Download the tarball from <a href=https://github.com/AlvinJian/auto_background_changer/releases>release archives</a> and decompress it. Execute the following command in the source code directory to install: 
 ```
 $ sudo python3 setup.py install
 ```
+There is also an <a href=https://aur.archlinux.org/packages/python-autobgch/>AUR</a> for Arch Linux users.
 ### Usage
 This program has two parts: <b>bgchd</b>(the daemon) and <b>bgctl</b>(the controller).
 
