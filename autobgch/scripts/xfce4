@@ -1,0 +1,12 @@
+#!/bin/sh
+wall_cycles=$(xfconf-query -c xfce4-desktop -l | grep backdrop-cycle-enable);
+wall_props=$(xfconf-query -c xfce4-desktop -l | grep last-image)
+
+# turn off built-in wallpaper slideshow
+for c in $wall_cycles; do
+    xfconf-query -c xfce4-desktop -p "$c" --set "false"
+done
+
+for p in $wall_props; do
+    xfconf-query -c xfce4-desktop -p "$p" --set "$1"
+done

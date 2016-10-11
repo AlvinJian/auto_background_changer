@@ -1,0 +1,2 @@
+#!/bin/sh
+pcmanfm-qt --set-wallpaper="$1" --wallpaper-mode=stretch
