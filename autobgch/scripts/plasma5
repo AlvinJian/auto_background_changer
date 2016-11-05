@@ -1,0 +1,11 @@
+#!/bin/bash
+_scr_="qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript 'var allDesktops = desktops(); \
+print (allDesktops); \
+for (i=0;i<allDesktops.length;i++) {\
+d = allDesktops[i]; \
+d.wallpaperPlugin = \"org.kde.image\"; \
+d.currentConfigGroup = Array(\"Wallpaper\", \"org.kde.image\", \"General\"); \
+d.writeConfig(\"Image\", \"file://$1\")}'"
+#echo $_scr_
+echo $_scr_ > /tmp/__plasma5_bgch
+bash /tmp/__plasma5_bgch
