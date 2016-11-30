@@ -32,7 +32,7 @@ def run():
     arg_to_ipccmd = {'play':IpcCmd.IPC_PLAY, 'pause':IpcCmd.IPC_PAUSE, 'next':IpcCmd.IPC_NEXT, \
         'prev':IpcCmd.IPC_PREV, 'info':IpcCmd.IPC_INFO, 'config':IpcCmd.IPC_CONFIG}
 
-    if sys.argv[1] == '-h' or sys.argv[1] == '--help':
+    if len(sys.argv) < 2 or sys.argv[1] == '-h' or sys.argv[1] == '--help':
         print_help()
         sys.exit(0)
 
