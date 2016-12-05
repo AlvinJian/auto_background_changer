@@ -42,7 +42,6 @@ Commands:
   config    Change configuration of bgchd. check 'bgctl config --help' for detail
 ```
 ### Demo
-YouTube: <a href="https://www.youtube.com/watch?v=SQKqVjSjbuY">https://www.youtube.com/watch?v=SQKqVjSjbuY</a>
-<iframe width="640" height="360" src="https://www.youtube.com/embed/SQKqVjSjbuY" frameborder="0" allowfullscreen></iframe>
+YouTube: <a href="https://youtu.be/zsZgOnMRW7M">https://youtu.be/zsZgOnMRW7M</a>
 ### Autostart
 For GNOME and Mate users, copy the template in ```/etc/autobgch/autostart/``` to ```$HOME/.config/autostart/``` and modify it as you need. For the users of lightweight window manager(i3, openbox...etc.), just add <b>bgchd</b> and arguments that you need to the startup script of your window manager.
