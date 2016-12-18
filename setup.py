@@ -8,7 +8,8 @@ except ImportError:
 
 data_files=[
     ('/etc/autobgch/scripts/',['autobgch/scripts/feh', 'autobgch/scripts/mate',
-        'autobgch/scripts/gnome3', 'autobgch/scripts/unity']),
+        'autobgch/scripts/gnome3', 'autobgch/scripts/unity', 'autobgch/scripts/xfce4', 
+        'autobgch/scripts/plasma5', 'autobgch/scripts/lxqt']),
     ('/etc/autobgch/autostart/', ['autobgch/autostart/bgchd-gnome.desktop',
         'autobgch/autostart/bgchd-mate.desktop'])
 ]
