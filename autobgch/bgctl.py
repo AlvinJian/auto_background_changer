@@ -79,7 +79,7 @@ def run():
         print('bgchd is busy')
         sys.exit(1)
     else:
-        res_p = get_payload_obj_from_ipcmsg(res_msg)
+        res_p = get_payload_objs_from_ipcmsg(res_msg)[0]
 
     if cmd == 'info':
         status, bgdir, cur_img, intv = res_p.DATA.split(',')

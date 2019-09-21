@@ -7,7 +7,7 @@ from autobgch.bgch_libs.bgch_core import *
 
 def create_ipc_handler(bg_obj):
     def ipc_handler(sv, msg):
-        payload = get_payload_obj_from_ipcmsg(msg)
+        payload = get_payload_objs_from_ipcmsg(msg)[0]
         sys.stdout.write('payload: {0} from ipc\n'.format(payload))
         sys.stdout.flush()
         cmd = payload.CMD

@@ -5,24 +5,22 @@ import threading
 import collections
 import enum
 import fcntl
+import json
 
 """
 [note]
-message format: ##HEAD##|<payload>|##END##
-payload format: <command>][<data>, <data>, ...
-server response spec (after receiving message from client):
-   MSG][ <message content>; -1 for error
-one response per receiving
+message format: ##HEAD##<payload string>##END##
+payload format: a json string in { <CMD>: <DATA> }
 
 daemon(server) support receiving command and data spec:
-PLAY][
-PAUSE][
-NEXT][
-PREV][
-CONFIG][<bg_dir>,<interval>
+PLAY:<empty>
+PAUSE:<empty>
+NEXT:<empty>
+PREV:<empty>
+CONFIG: <bg_dir>,<interval>
     change background directory and interval
-INFO][
-    return payload: MSG][<status>,<bg_dir>,<current wallpaper>,<interval>
+INFO:<empty>
+    server response MSG: <status>,<bg_dir>,<current wallpaper>,<interval>
 """
 
 sv_addr='/tmp/bgchd.sock'
@@ -145,8 +143,8 @@ def start_server_thrd(ipc_handler):
     return thrd
 
 def get_ipcmsg_by_payload_obj(payload):
-    pay_str='{0}][{1}'.format(payload.CMD.value, payload.DATA)
-    msg='{0}|{1}|{2}'.format(HEAD, pay_str, END)
+    pay_str = json.dumps({payload.CMD.value: payload.DATA})
+    msg = '{0}{1}{2}'.format(HEAD, pay_str, END)
     return msg
 
 def send_ipcmsg_to_sv(payload):
@@ -161,10 +159,12 @@ def send_ipcmsg_to_sv(payload):
     client.close()
     return rsp.decode('utf-8')
 
-def get_payload_obj_from_ipcmsg(msg):
-    p = msg.split('|')[1]
-    if '][' in p:
-        lst = p.split('][')
-        if len(lst) == 2:
-            return Payload(CMD=IpcCmd(lst[0]), DATA=lst[1])
-    raise ValueError('incorrect payload format')
+def get_payload_objs_from_ipcmsg(msg):
+    if not msg.startswith(HEAD) or not msg.endswith(END):
+        raise ValueError('invalid message format')
+    jstr = msg[len(HEAD):len(msg)-len(END)]
+    jobj = json.loads(jstr)
+    payloads = []
+    for k in list(jobj):
+        payloads.append(Payload(CMD=IpcCmd(k), DATA=jobj[k]))
+    return payloads
